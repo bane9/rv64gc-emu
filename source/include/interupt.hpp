@@ -25,18 +25,6 @@ struct Interrupt
         None = NONE_VAL
     };
 
-    static constexpr auto interrupt_str = std::array<const char*, MachineExternal + 1>{{
-        [UserSoftware] = "UserSoftware",
-        [SupervisorSoftware] = "SupervisorSoftware",
-        [MachineSoftware] = "MachineSoftware",
-        [UserTimer] = "UserTimer",
-        [SupervisorTimer] = "SupervisorTimer",
-        [MachineTimer] = "MachineTimer",
-        [UserExternal] = "UserExternal",
-        [SupervisorExternal] = "SupervisorExternal",
-        [MachineExternal] = "MachineExternal",
-    }};
-
     static const char* get_interrupt_str(interrupt::Interrupt::InterruptValue value);
 };
 
@@ -67,23 +55,6 @@ struct Exception
 
         None = NONE_VAL
     };
-
-    static constexpr auto exception_str = std::array<const char*, StorePageFault + 1>{{
-        [InstructionAddressMisaligned] = "InstructionAddressMisaligned",
-        [InstructionAccessFault] = "InstructionAccessFault",
-        [IllegalInstruction] = "IllegalInstruction",
-        [Breakpoint] = "Breakpoint",
-        [LoadAddressMisaligned] = "LoadAddressMisaligned",
-        [LoadAccessFault] = "LoadAccessFault",
-        [StoreAddressMisaligned] = "StoreAddressMisaligned",
-        [StoreAccessFault] = "StoreAccessFault",
-        [ECallUMode] = "ECallUMode",
-        [ECallSMode] = "ECallSMode",
-        [ECallMMode] = "ECallMMode",
-        [InstructionPageFault] = "InstructionPageFault",
-        [LoadPageFault] = "LoadPageFault",
-        [StorePageFault] = "StorePageFault",
-    }};
 
     static const char* get_exception_str(ExceptionValue value);
 };

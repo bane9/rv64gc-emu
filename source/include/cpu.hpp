@@ -175,35 +175,13 @@ class Cpu
     std::set<uint64_t> reservations;
 
   public:
-    static constexpr auto reg_name_abi_str = std::array<const char*, 32>{{
-        [reg_abi_name::zero] = "zero", [reg_abi_name::ra] = "ra", [reg_abi_name::sp] = "sp",
-        [reg_abi_name::gp] = "gp",     [reg_abi_name::tp] = "tp", [reg_abi_name::t0] = "t0",
-        [reg_abi_name::t1] = "t1",     [reg_abi_name::t2] = "t2", [reg_abi_name::s0] = "s0",
-        [reg_abi_name::s1] = "s1",     [reg_abi_name::a0] = "a0", [reg_abi_name::a1] = "a1",
-        [reg_abi_name::a2] = "a2",     [reg_abi_name::a3] = "a3", [reg_abi_name::a4] = "a4",
-        [reg_abi_name::a5] = "a5",     [reg_abi_name::a6] = "a6", [reg_abi_name::a7] = "a7",
-        [reg_abi_name::s2] = "s2",     [reg_abi_name::s3] = "s3", [reg_abi_name::s4] = "s4",
-        [reg_abi_name::s5] = "s5",     [reg_abi_name::s6] = "s6", [reg_abi_name::s7] = "s7",
-        [reg_abi_name::s8] = "s8",     [reg_abi_name::s9] = "s9", [reg_abi_name::s10] = "s10",
-        [reg_abi_name::s11] = "s11",   [reg_abi_name::t3] = "t3", [reg_abi_name::t4] = "t4",
-        [reg_abi_name::t5] = "t5",     [reg_abi_name::t6] = "t6",
-    }};
+    static constexpr auto reg_name_abi_str = std::array<const char*, 32>{
+        {"zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",
+         "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
+         "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"}};
 
     static constexpr auto freg_name_abi_str = std::array<const char*, 32>{
-        {[freg_abi_name::ft0] = "ft0",   [freg_abi_name::ft1] = "ft1",
-         [freg_abi_name::ft2] = "ft2",   [freg_abi_name::ft3] = "ft3",
-         [freg_abi_name::ft4] = "ft4",   [freg_abi_name::ft5] = "ft5",
-         [freg_abi_name::ft6] = "ft6",   [freg_abi_name::ft7] = "ft7",
-         [freg_abi_name::fs0] = "fs0",   [freg_abi_name::fs1] = "fs1",
-         [freg_abi_name::fa0] = "fa0",   [freg_abi_name::fa1] = "fa1",
-         [freg_abi_name::fa2] = "fa2",   [freg_abi_name::fa3] = "fa3",
-         [freg_abi_name::fa4] = "fa4",   [freg_abi_name::fa5] = "fa5",
-         [freg_abi_name::fa6] = "fa6",   [freg_abi_name::fa7] = "fa7",
-         [freg_abi_name::fs2] = "fs2",   [freg_abi_name::fs3] = "fs3",
-         [freg_abi_name::fs4] = "fs4",   [freg_abi_name::fs5] = "fs5",
-         [freg_abi_name::fs6] = "fs6",   [freg_abi_name::fs7] = "fs7",
-         [freg_abi_name::fs8] = "fs8",   [freg_abi_name::fs9] = "fs9",
-         [freg_abi_name::fs10] = "fs10", [freg_abi_name::fs11] = "fs11",
-         [freg_abi_name::ft8] = "ft8",   [freg_abi_name::ft9] = "ft9",
-         [freg_abi_name::ft10] = "ft10", [freg_abi_name::ft11] = "ft11"}};
+        {"ft0", "ft1", "ft2", "ft3", "ft4",  "ft5",  "ft6", "ft7", "fs0",  "fs1", "fa0",
+         "fa1", "fa2", "fa3", "fa4", "fa5",  "fa6",  "fa7", "fs2", "fs3",  "fs4", "fs5",
+         "fs6", "fs7", "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"}};
 };

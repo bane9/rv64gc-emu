@@ -349,7 +349,7 @@ template <typename T> static void fmin(Cpu& cpu, Decoder decoder)
     }
     else [[unlikely]]
     {
-        cpu.fregs[rd] = signbit(val1) ? val1 : val2;
+        cpu.fregs[rd] = std::signbit(val1) ? val1 : val2;
     }
 }
 
@@ -392,7 +392,7 @@ template <typename T> static void fmax(Cpu& cpu, Decoder decoder)
     }
     else [[unlikely]]
     {
-        cpu.fregs[rd] = signbit(val1) ? val2 : val1;
+        cpu.fregs[rd] = std::signbit(val1) ? val2 : val1;
     }
 }
 

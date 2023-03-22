@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <ostream>
 #include <utility>
 #include <vector>
@@ -19,7 +20,7 @@ namespace helper
 template <class To, class From> To bit_cast(const From& src)
 {
     To dst;
-    std::memcpy(&dst, &src, sizeof(To));
+    memcpy(&dst, &src, sizeof(To));
     return dst;
 }
 

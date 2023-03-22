@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sys/wait.h>
 #include <termios.h>

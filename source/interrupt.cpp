@@ -166,22 +166,35 @@ const char* exception::Exception::get_exception_str(ExceptionValue value)
     switch (value)
     {
     case InstructionAddressMisaligned:
+        return "InstructionAddressMisaligned";
     case InstructionAccessFault:
+        return "InstructionAccessFault";
     case IllegalInstruction:
+        return "IllegalInstruction";
     case Breakpoint:
+        return "Breakpoint";
     case LoadAddressMisaligned:
+        return "LoadAddressMisaligned";
     case LoadAccessFault:
+        return "LoadAccessFault";
     case StoreAddressMisaligned:
+        return "StoreAddressMisaligned";
     case StoreAccessFault:
+        return "StoreAccessFault";
     case ECallUMode:
+        return "ECallUMode";
     case ECallSMode:
+        return "ECallSMode";
     case ECallMMode:
+        return "ECallMMode";
     case InstructionPageFault:
+        return "InstructionPageFault";
     case LoadPageFault:
+        return "LoadPageFault";
     case StorePageFault:
-        return exception_str[value];
+        return "StorePageFault";
     default:
-        return "Unknown exception";
+        return "Unknow exception";
     }
 }
 
@@ -190,15 +203,23 @@ const char* interrupt::Interrupt::get_interrupt_str(interrupt::Interrupt::Interr
     switch (value)
     {
     case UserSoftware:
+        return "UserSoftware";
     case SupervisorSoftware:
+        return "SupervisorSoftware";
     case MachineSoftware:
+        return "MachineSoftware";
     case UserTimer:
+        return "UserTimer";
     case SupervisorTimer:
+        return "SupervisorTimer";
     case MachineTimer:
+        return "MachineTimer";
     case UserExternal:
+        return "UserExternal";
     case SupervisorExternal:
+        return "SupervisorExternal";
     case MachineExternal:
-        return interrupt_str[value];
+        return "MachineExternal";
     default:
         return "Unknown interrupt";
     }

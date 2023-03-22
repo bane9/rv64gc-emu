@@ -18,7 +18,9 @@ testbins/
 *.s
 *.S
 
-.DS_store
+.DS_Store
 
 env/
 __pycache__/
+
+.vscode/

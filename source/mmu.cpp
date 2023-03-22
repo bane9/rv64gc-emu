@@ -2,6 +2,7 @@
 #include "cpu.hpp"
 #include "cpu_config.hpp"
 #include "helper.hpp"
+#include <cassert>
 #include <utility>
 
 namespace mmu
