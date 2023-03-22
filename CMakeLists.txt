@@ -77,8 +77,6 @@ find_package(SDL2_TTF REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(VTERM REQUIRED IMPORTED_TARGET vterm)
 
-set (ICU_ROOT /opt/homebrew/opt/icu4c/)
-
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 
 set(ALL_INCLUDE_DIRS

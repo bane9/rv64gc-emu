@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [macOS-latest]
 
     steps:
     - name: Checkout repository
@@ -24,36 +24,35 @@ jobs:
     - name: Install dependencies (Ubuntu)
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update
         sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
 
     - name: Install RISC-V GNU toolchain (Ubuntu)
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update
         sudo apt-get install -y gcc-riscv64-unknown-elf
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew update
         brew install cmake sdl2 sdl2_ttf icu4c libvterm
+
+    - name: Set environment variables for ICU (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix icu4c)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix icu4c)/include" >> $GITHUB_ENV
 
     - name: Install RISC-V GNU toolchain (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew tap riscv/riscv
-        brew install riscv-gnu-toolchain --HEAD
+        brew tap riscv-software-src/riscv
+        brew install riscv-tools
 
     - name: Add RISC-V GNU toolchain to PATH (Ubuntu)
       if: runner.os == 'Linux'
       run: |
         echo "/usr/bin" >> $GITHUB_PATH
-
-    - name: Add RISC-V GNU toolchain to PATH (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        echo "/usr/local/opt/riscv-gnu-toolchain/bin" >> $GITHUB_PATH
 
     - name: Configure
       run: |
@@ -67,4 +66,4 @@ jobs:
       run: |
         cmake -P MakeTests.cmake
         cd build/
-        ctest
+        ctest --output-on-failure
