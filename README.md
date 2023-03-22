@@ -2,7 +2,9 @@
 
 [![Build and Test](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml)
 
+<p align="center">
 <img src="demo.gif" width="404" height="330">
+</p>
 
 RISCV emulator written in C++17
 
