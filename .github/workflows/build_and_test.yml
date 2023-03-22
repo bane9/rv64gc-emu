@@ -12,8 +12,9 @@ jobs:
   build_and_test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [macOS-latest]
+        os: [ubuntu-latest, macOS-latest]
 
     steps:
     - name: Checkout repository
