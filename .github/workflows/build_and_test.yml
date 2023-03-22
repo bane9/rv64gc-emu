@@ -18,71 +18,64 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
 
-    - name: Install RISC-V GNU toolchain (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get install -y gcc-riscv64-unknown-elf
+      - name: Install RISC-V GNU toolchain (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y gcc-riscv64-unknown-elf
 
-    - name: Install dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install cmake sdl2 sdl2_ttf icu4c libvterm
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake sdl2 sdl2_ttf icu4c libvterm
 
-    - name: Set environment variables for ICU (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix icu4c)/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$(brew --prefix icu4c)/include" >> $GITHUB_ENV
+      - name: Set environment variables for ICU (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix icu4c)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix icu4c)/include" >> $GITHUB_ENV
 
-    - name: Install RISC-V GNU toolchain (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew tap riscv-software-src/riscv
-        brew install riscv-tools
+      - name: Install RISC-V GNU toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew tap riscv-software-src/riscv
+          brew install riscv-tools
 
-    - name: Add RISC-V GNU toolchain to PATH (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        echo "/usr/bin" >> $GITHUB_PATH
+      - name: Add RISC-V GNU toolchain to PATH (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          echo "/usr/bin" >> $GITHUB_PATH
 
-    - name: Configure
-      run: |
-        cmake . -Bbuild/ -DCMAKE_BUILD_TYPE=Release
+      - name: Configure
+        run: |
+          cmake . -Bbuild/ -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build
-      run: |
-        cmake --build build/
+      - name: Build
+        run: |
+          cmake --build build/
 
-    # - name: Run Tests
-    #   run: |
-    #     cmake -P MakeTests.cmake
-    #     cd build/
-    #     ctest --output-on-failure 
+      # - name: Run Tests
+      #   run: |
+      #     cmake -P MakeTests.cmake
+      #     cd build/
+      #     ctest --output-on-failure 
 
-    - name: Upload build artifacts (Ubuntu)
-      if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v2
-      with:
-        name: release-assets
-        path: build/rv64gc_emu
-
-    - name: Upload build artifacts (macOS)
-      if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'macOS-latest'
-      uses: actions/upload-artifact@v2
-      with:
-        name: release-assets
-        path: build/rv64gc_emu
+      - name: Upload build artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-assets-${{ matrix.os }}
+          path: build/rv64gc_emu
 
   create_release:
     needs: build_and_test
@@ -101,9 +94,9 @@ jobs:
           name: release-assets-${{ matrix.os }}
           path: release-assets
 
-      - name: Create Release
+      - name: Create Release (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        id: create_release
+        id: create_release_ubuntu
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
@@ -113,28 +106,29 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
+      - name: Create Release (macOS)
+        if: matrix.os == 'macOS-latest'
+        id: create_release_macos
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
         with:
-          name: release-assets
-          path: release-assets
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          target_commitish: ${{ github.sha }}
 
-      - name: Upload Release Asset (Ubuntu)
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release-assets/rv64gc_emu_ubuntu
-          asset_name: rv64gc_emu_ubuntu
+          upload_url: ${{ matrix.os == 'ubuntu-latest' && steps.create_release_ubuntu.outputs.upload_url || matrix.os == 'macOS-latest' && steps.create_release_macos.outputs.upload_url }} 
+          asset_path: release-assets/rv64gc_emu
+          asset_name: rv64gc_emu_${{ matrix.os }}
           asset_content_type: application/octet-stream
 
-      - name: Upload Release Asset (macOS)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release-assets/rv64gc_emu_macos
-          asset_name: rv64gc_emu_macos
-          asset_content_type: application/octet-stream
+
+
+         
