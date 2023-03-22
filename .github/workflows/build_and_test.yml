@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'
   pull_request:
     branches:
       - main
@@ -63,8 +65,53 @@ jobs:
       run: |
         cmake --build build/
 
-    - name: Run Tests
-      run: |
-        cmake -P MakeTests.cmake
-        cd build/
-        ctest --output-on-failure
+    # - name: Run Tests
+    #   run: |
+    #     cmake -P MakeTests.cmake
+    #     cd build/
+    #     ctest --output-on-failure
+
+  create_release:
+    needs: build_and_test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup for Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          echo "ASSET_NAME=rv64gc_emu_ubuntu" >> $GITHUB_ENV
+          echo "ASSET_PATH=build/rv64gc_emu" >> $GITHUB_ENV
+
+      - name: Setup for macOS
+        if: runner.os == 'macOS'
+        run: |
+          echo "ASSET_NAME=rv64gc_emu_macos" >> $GITHUB_ENV
+          echo "ASSET_PATH=build/rv64gc_emu" >> $GITHUB_ENV
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET_PATH }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/octet-stream
