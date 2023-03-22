@@ -59,6 +59,12 @@ jobs:
         run: |
           cmake --build build/
 
+      - name: Run Tests
+        run: |
+          cmake -P MakeTests.cmake
+          cd build/
+          ctest --output-on-failure 
+
       - name: Upload build artifacts
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v2
