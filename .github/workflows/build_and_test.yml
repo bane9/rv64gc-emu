@@ -14,7 +14,6 @@ jobs:
   build_and_test:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest]
 
@@ -71,38 +70,44 @@ jobs:
     #     cd build/
     #     ctest --output-on-failure 
 
-    - name: Set release variables for Ubuntu
-      if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
-      run: |
-        echo "ASSET_NAME=rv64gc_emu_ubuntu" >> $GITHUB_ENV
-        echo "ASSET_PATH=build/rv64gc_emu" >> $GITHUB_ENV
-
-    - name: Set release variables for macOS
-      if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/')
-      run: |
-        echo "ASSET_NAME=rv64gc_emu_macos" >> $GITHUB_ENV
-        echo "ASSET_PATH=build/rv64gc_emu" >> $GITHUB_ENV
-
-    - name: Create Release
+    - name: Upload build artifacts
       if: startsWith(github.ref, 'refs/tags/')
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
+      uses: actions/upload-artifact@v2
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+        name: release-assets/${{ matrix.os }}
+        path: build/rv64gc_emu
 
-    - name: Upload Release Asset
-      if: startsWith(github.ref, 'refs/tags/')
-      id: upload_release_asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.ASSET_PATH }}
-        asset_name: ${{ env.ASSET_NAME }}
-        asset_content_type: application/octet-stream
+  create_release:
+    needs: build_and_test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.CREATE_RELEASE_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release-assets/${{ matrix.os }}/rv64gc_emu
+          asset_name: rv64gc_emu_${{ matrix.os }}
+          asset_content_type: application/octet-stream
