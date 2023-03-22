@@ -91,7 +91,7 @@ set(ALL_INCLUDE_DIRS
 
 target_include_directories(rv64gc_emu PRIVATE ${ALL_INCLUDE_DIRS})
 
-target_link_libraries(rv64gc_emu PRIVATE fmt::fmt SDL2::SDL2 PkgConfig::VTERM SDL2_TTF ${ICU_LIBRARIES})
+target_link_libraries(rv64gc_emu PRIVATE fmt::fmt SDL2::SDL2 PkgConfig::VTERM SDL2_ttf ${ICU_LIBRARIES})
 
 # Tests
 
