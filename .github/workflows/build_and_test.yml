@@ -117,7 +117,6 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-          target_commitish: ${{ github.sha }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
