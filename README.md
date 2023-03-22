@@ -1,6 +1,8 @@
-# rv64gc_emu
+# rv64gc Emulaotor
 
-RISCV emulator written in C++
+[![Build and Test](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml)
+
+RISCV emulator written in C++17
 
 ## Features
 
@@ -12,27 +14,35 @@ RISCV emulator written in C++
 - PLIC
 - CLINT
 - bios (firmware), kernel and dtb loading
-- Passes all [RISCV imafdcsu compliance tests](https://github.com/riscv-software-src/riscv-tests)
+- Passes all [RISCV imafdcsu compliance tests](https://github.com/riscv-software-src/riscv-tests) (at least on M2, on x86_64 they are failing)
 
 ## Bulding
 
 First, recursively pull this repo 
 
-> git clone --recurse-submodules https://github.com/bane9/rv64gc-emu.git
+```bash
+git clone --recurse-submodules https://github.com/bane9/rv64gc-emu.git
+```
 
 Then, download the required tooling:
 
 **Linux**
 
-> sudo apt install cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
+```bash
+sudo apt install cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
+```
 
 **Mac**
 
-> brew install cmake sdl2 sdl2_ttf icu4c libvterm
+```bash
+brew install cmake sdl2 sdl2_ttf icu4c libvterm
+brew link icu4c --force
+echo "ICU_ROOT=$(brew --prefix icu4c)" >> ~/.zshrc
+```
 
 In the directory of this git, type in the command line:
 
-```
+```bash
 cmake . -Bbuild/ -DCMAKE_BUILD_TYPE=Release
 cmake --build build/
 ```
@@ -40,7 +50,7 @@ cmake --build build/
 The executable will be in the `build/rv64gc_emu`
 
 ## Usage
-```
+```bash
 Usage: ./rv64gc_emu [options]
 Options:
   -b, --bios bios_path     Path to the BIOS file (mandatory)
@@ -49,7 +59,7 @@ Options:
   -k, --kernel kernel_path Path to the kernel file (optional)
 ```
 
-`bios` option is meant either for baremetal firmware, or for a linux bootloader (e.g OpenSBI, BBL)
+`bios` option is meant either for bare-metal firmware, or for a linux bootloader (e.g OpenSBI, BBL)
 
 `font` will be used by the SDL window in text mode
 
@@ -57,14 +67,26 @@ Options:
 
 ## Testing
 
-To run the tests, first you need to build and install the [RISCV GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
+After building the emulator, install the riscv gnu toolchain:
 
-After that, in the root directory of this git, type in your terminal (emulator needs to be built beforehand):
+**Linux**
 
+```bash
+sudo apt install gcc-riscv64-unknown-elf
 ```
+
+**Mac**
+
+```bash
+brew tap riscv-software-src/riscv
+brew install riscv-tools
+```
+
+Then, run these command from the root of this git:
+
+```bash
 cmake -P MakeTests.cmake
-cd build/
-ctest
+ctest --test-dir build/ --output-on-failure
 ```
 
 ## Supported software
