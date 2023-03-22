@@ -26,13 +26,31 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
+        sudo apt-get install -y autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
         brew update
         brew install cmake sdl2 sdl2_ttf icu4c libvterm
-        brew link icu4c --force
+        brew install autoconf automake python3 libmpc mpfr gmp gawk bison flex texinfo gperf libtool patchutils zlib expat
+        brew install gnu-sed --with-default-names
+
+    - name: Build RISC-V GNU toolchain (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        git clone https://github.com/riscv/riscv-gnu-toolchain
+        cd riscv-gnu-toolchain
+        ./configure --prefix=/usr/local
+        sudo make
+
+    - name: Build RISC-V GNU toolchain (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        git clone https://github.com/riscv/riscv-gnu-toolchain
+        cd riscv-gnu-toolchain
+        ./configure --prefix=/opt/homebrew/bin
+        sudo make
 
     - name: Configure
       run: |
