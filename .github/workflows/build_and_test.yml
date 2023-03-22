@@ -27,6 +27,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
 
+    - name: Set up GCC (Ubuntu)
+      if: runner.os == 'Linux'
+      uses: jwlawson/actions-setup-gcc@v2
+      with:
+        gcc-version: '12'
+
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
