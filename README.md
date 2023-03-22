@@ -1,4 +1,4 @@
-# rv64gc Emulaotor
+# rv64gc Emulator
 
 [![Build and Test](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml)
 
@@ -14,7 +14,7 @@ RISCV emulator written in C++17
 - PLIC
 - CLINT
 - bios (firmware), kernel and dtb loading
-- Passes all [RISCV imafdcsu compliance tests](https://github.com/riscv-software-src/riscv-tests) (at least on M2, on x86_64 they are failing)
+- Passes all [RISCV imafdcsu isa tests](https://github.com/riscv-software-src/riscv-tests) (at least on M2, on x86_64 they are failing)
 
 ## Bulding
 
