@@ -194,7 +194,7 @@ const char* exception::Exception::get_exception_str(ExceptionValue value)
     case StorePageFault:
         return "StorePageFault";
     default:
-        return "Unknow exception";
+        return "Unknown exception";
     }
 }
 

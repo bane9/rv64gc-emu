@@ -5,7 +5,6 @@
 #include "helper.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
-#include "screen.hpp"
 #include <cstring>
 #include <filesystem>
 #include <getopt.h>
