@@ -12,11 +12,14 @@ function (build_asm asm_path out_path)
         exec_program("riscv64-unknown-elf-objcopy -O binary temp ${out_path}/bin/${filename_bin}")
         exec_program("riscv64-unknown-elf-objdump --disassemble-all temp > ${out_path}/dumped/${filename_dump}")
     endforeach()
-
-    file(REMOVE temp)
 endfunction()
 
-exec_program("rm -rf testbins")
+if(WIN32)
+    exec_program("rmdir /s /q testbins")
+else()
+    exec_program("rm -rf testbins")
+endif()
+
 file(MAKE_DIRECTORY testbins)
 
 build_asm("riscv-tests/isa/rv64ui/*.S" "testbins/rv64ui")
@@ -28,3 +31,5 @@ build_asm("riscv-tests/isa/rv64uc/*.S" "testbins/rv64uc")
 
 build_asm("riscv-tests/isa/rv64mi/*.S" "testbins/rv64mi")
 build_asm("riscv-tests/isa/rv64si/*.S" "testbins/rv64si")
+
+file(REMOVE temp)

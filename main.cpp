@@ -7,26 +7,26 @@
 #include "ram.hpp"
 #include <cstring>
 #include <filesystem>
+#include <fmt/core.h>
 #include <getopt.h>
 #include <iostream>
 #include <utility>
 
 void print_usage(char* argv[])
 {
-    std::cerr
-        << "Usage: " << argv[0] << " [options]\n"
-        << "Options:\n"
-        << "  -b, --bios bios_path     Path to the BIOS file (mandatory)\n"
-        << "  -f, --font font_path     Path to the font file (mandatory)\n"
-        << "  -d, --dtb dtb_path       Path to the device tree blob file (optional, mandatory "
-           "if kernel is present)\n"
-        << "  -k, --kernel kernel_path Path to the kernel file (optional)\n"
-        << std::endl;
+    std::cerr << fmt::format("Usage: {} [options]\n"
+                             "Options:\n"
+                             "  -b, --bios bios_path     Path to the BIOS file (mandatory)\n"
+                             "  -f, --font font_path     Path to the font file (mandatory)\n"
+                             "  -d, --dtb dtb_path       Path to the device tree blob file "
+                             "(optional, mandatory if kernel is present)\n"
+                             "  -k, --kernel kernel_path Path to the kernel file (optional)\n",
+                             argv[0]);
 }
 
 void error_exit(char* argv[], const std::string& error_message)
 {
-    std::cerr << "Error: " << error_message << std::endl;
+    std::cerr << fmt::format("Error: {}\n", error_message);
     print_usage(argv);
     exit(1);
 }
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     }
 
     auto bios = helper::load_file(bios_path);
-    RamDevice dram = RamDevice(0x80000000, SIZE_MIB(256) + sizeof(uint64_t), std::move(bios));
+    RamDevice dram = RamDevice(0x80000000U, SIZE_MIB(256) + sizeof(uint64_t), std::move(bios));
 
     Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address());
 

@@ -27,7 +27,7 @@ uint64_t Mmu::load(uint64_t address, uint64_t length)
     return value;
 }
 
-uint64_t Mmu::load_insn(uint64_t address, uint64_t length)
+uint64_t Mmu::fetch(uint64_t address, uint64_t length)
 {
     uint64_t p_address = translate(address, AccessType::Instruction);
 

@@ -10,7 +10,7 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
     cpu.sleep = false;
 
-    uint64_t pc = cpu.pc;
+    uint64_t pc = cpu.pc - 4;
     cpu::Mode mode = cpu.mode;
 
     bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> int_val) & 1;
@@ -29,7 +29,7 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
         cpu.pc = (stvec_val & ~1U) + vt_offset;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~1U);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~3U);
 
         cpu.cregs.store(csr::Address::SCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -40,7 +40,9 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
         cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SIE, 0);
 
-        cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SPP, mode != cpu::Mode::User);
+        cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SPP, (mode == cpu::Mode::User)
+                                                                    ? cpu::Mode::Supervisor
+                                                                    : cpu::Mode::User);
     }
     else
     {
@@ -56,7 +58,7 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
         cpu.pc = (mtvec_val & ~1U) + vt_offset;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~1U);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~3U);
 
         cpu.cregs.store(csr::Address::MCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -75,7 +77,7 @@ void exception::process(Cpu& cpu)
 {
     cpu.sleep = false;
 
-    uint64_t pc = get_pc(cpu);
+    uint64_t pc = cpu.pc - 4;
     cpu::Mode mode = cpu.mode;
 
     bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> cpu.exc_val) & 1;
@@ -86,9 +88,9 @@ void exception::process(Cpu& cpu)
 
         uint64_t stvec_val = cpu.cregs.load(csr::Address::STVEC);
 
-        cpu.pc = stvec_val & ~1U;
+        cpu.pc = stvec_val & ~3U;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~1U);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~3U);
 
         cpu.cregs.store(csr::Address::SCAUSE, cpu.exc_val);
 
@@ -99,7 +101,9 @@ void exception::process(Cpu& cpu)
 
         cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SIE, 0);
 
-        cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SPP, mode != cpu::Mode::User);
+        cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SPP, (mode == cpu::Mode::User)
+                                                                    ? cpu::Mode::Supervisor
+                                                                    : cpu::Mode::User);
     }
     else
     {
@@ -107,9 +111,9 @@ void exception::process(Cpu& cpu)
 
         uint64_t mtvec_val = cpu.cregs.load(csr::Address::MTVEC);
 
-        cpu.pc = mtvec_val & ~1U;
+        cpu.pc = mtvec_val & ~3U;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~1U);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~3U);
 
         cpu.cregs.store(csr::Address::MCAUSE, cpu.exc_val);
 
@@ -121,21 +125,6 @@ void exception::process(Cpu& cpu)
         cpu.cregs.write_bit_mstatus(csr::Mask::MSTATUSBit::MIE, 0);
 
         cpu.cregs.write_mpp_mode(mode);
-    }
-}
-
-uint64_t exception::get_pc(Cpu& cpu)
-{
-    switch (cpu.exc_val)
-    {
-    case Exception::Breakpoint:
-    case Exception::InstructionPageFault:
-    case Exception::LoadPageFault:
-    case Exception::StorePageFault:
-    case Exception::IllegalInstruction:
-        return cpu.pc - 4;
-    default:
-        return cpu.pc;
     }
 }
 

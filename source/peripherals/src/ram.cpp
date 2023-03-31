@@ -24,16 +24,12 @@ uint64_t RamDevice::load(Bus& bus, uint64_t address, uint64_t length)
     {
     case 8:
         return data[address];
-        break;
     case 16:
         return *reinterpret_cast<uint16_t*>(data.data() + address);
-        break;
     case 32:
         return *reinterpret_cast<uint32_t*>(data.data() + address);
-        break;
     case 64:
         return *reinterpret_cast<uint64_t*>(data.data() + address);
-        break;
     default:
         break;
     }

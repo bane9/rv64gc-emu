@@ -43,7 +43,7 @@ class Mmu
     Mmu(Cpu& cpu);
 
     uint64_t load(uint64_t address, uint64_t length);
-    uint64_t load_insn(uint64_t address, uint64_t length = 32);
+    uint64_t fetch(uint64_t address, uint64_t length = 32);
     void store(uint64_t address, uint64_t value, uint64_t length);
 
   public:

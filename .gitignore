@@ -24,3 +24,9 @@ env/
 __pycache__/
 
 .vscode/
+
+images/
+*.elf
+Image
+*.dts
+*.dtb

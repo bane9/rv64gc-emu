@@ -50,6 +50,6 @@ std::vector<uint8_t> load_file(const char* filename);
 
 template <typename T> bool value_in_range(T value, T lower_range, T upper_range)
 {
-    return (value > lower_range) && (value <= upper_range);
+    return (value >= lower_range) && (value < upper_range);
 }
 } // namespace helper

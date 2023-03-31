@@ -20,6 +20,8 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     TTF_Init();
 
+    SDL_ShowCursor(SDL_DISABLE);
+
     font = TTF_OpenFont(font_path, 48);
 
     window = SDL_CreateWindow(screen_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width,
@@ -43,6 +45,7 @@ GpuDevice::~GpuDevice()
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_CloseFont(font);
 }
 
 uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
@@ -56,7 +59,7 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
     case term_dimensions:
         return (term_rows << 16) | term_cols;
     default:
-        if (helper::value_in_range(address, fb_start - 1, fb_end))
+        if (helper::value_in_range(address, fb_start, fb_end))
         {
             address -= fb_start;
 
@@ -64,21 +67,17 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
             {
             case 8:
                 return framebuffer[address];
-                break;
             case 16:
                 return *reinterpret_cast<uint16_t*>(framebuffer.get() + address);
-                break;
             case 32:
                 return *reinterpret_cast<uint32_t*>(framebuffer.get() + address);
-                break;
             case 64:
                 return *reinterpret_cast<uint64_t*>(framebuffer.get() + address);
-                break;
             default:
                 break;
             }
         }
-        else if (helper::value_in_range(address, uart_base_addr - 1, uart_base_addr + uart_size))
+        else if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
         {
             if (length != 8)
             {
@@ -141,7 +140,7 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
         break;
     }
     default:
-        if (helper::value_in_range(address, fb_start - 1, fb_end)) [[likely]]
+        if (helper::value_in_range(address, fb_start, fb_end)) [[likely]]
         {
             address -= fb_start;
 
@@ -163,7 +162,7 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
                 break;
             }
         }
-        else if (helper::value_in_range(address, uart_base_addr - 1, uart_base_addr + uart_size))
+        else if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
         {
             if (address == cfg::thr)
             {

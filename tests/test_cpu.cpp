@@ -92,6 +92,13 @@ bool is_debugger_present()
     return false;
 }
 
+#else
+
+bool is_debugger_present()
+{
+    return false;
+}
+
 #endif
 
 #define TO_HOST_OFFSET (0x1000U)
@@ -100,7 +107,7 @@ bool is_debugger_present()
 bool test_binary(const std::filesystem::directory_entry& binary_path)
 {
     RamDevice dram =
-        RamDevice(0x80000000, SIZE_KIB(64), helper::load_file(binary_path.path().c_str()));
+        RamDevice(0x80000000U, SIZE_KIB(64), helper::load_file(binary_path.path().c_str()));
 
     Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address());
 
@@ -118,18 +125,20 @@ bool test_binary(const std::filesystem::directory_entry& binary_path)
     bool failed_on_exception = false;
     uint64_t a0 = -1;
 
+    bool debugger_present = is_debugger_present();
+
     while (!timeout)
     {
         cpu.loop(ss);
 
-        if (dram.data[TO_HOST_OFFSET] != 0 || dram.data[TO_HOST_OFFSET_C] != 0)
+        if (dram.data[TO_HOST_OFFSET] != 0 || dram.data[TO_HOST_OFFSET_C] != 0) [[unlikely]]
         {
             a0 = cpu.regs[Cpu::reg_abi_name::a0];
             break;
         }
 
         if (cpu.exc_val != exception::Exception::None && cpu.cregs.regs[csr::Address::MTVEC] == 0 &&
-            cpu.cregs.regs[csr::Address::STVEC] == 0)
+            cpu.cregs.regs[csr::Address::STVEC] == 0) [[unlikely]]
         {
             failed_on_exception = true;
             break;
@@ -139,7 +148,7 @@ bool test_binary(const std::filesystem::directory_entry& binary_path)
             cpu.clear_exception();
         }
 
-        if (!is_debugger_present())
+        if (!debugger_present) [[likely]]
         {
             timeout = helper::get_milliseconds() - start > 1000;
         }
@@ -172,20 +181,19 @@ bool test_binary(const std::filesystem::directory_entry& binary_path)
 
     cpu.dump_registers(ss);
 
-    std::string file =
-        std::string("../tests/logs/") + std::string(binary_path.path().stem()) + ".log";
+    std::string file = fmt::format("../tests/logs/{}.log", binary_path.path().stem().c_str());
 
     std::ofstream of = std::ofstream(file);
 
     if (!of)
     {
-        std::cout << "Failed to create " << file << "\n";
+        std::cerr << fmt::format("Failed to create {}\n", file);
         return false;
     }
 
     of << ss.str();
 
-    std::cout << "Runtime data dumped to " << file << "\n";
+    std::cout << fmt::format("Runtime data dumped to {}\n", file);
 
     return false;
 }
@@ -202,7 +210,7 @@ bool test_bins(std::string directory)
         {
             total += 1;
 
-            std::cout << "Performing test: " << entry.path().stem() << "\n";
+            std::cout << fmt::format("Performing test: {}\n", entry.path().stem().c_str());
 
             if (test_binary(entry))
             {
@@ -219,8 +227,8 @@ bool test_bins(std::string directory)
         }
     }
 
-    std::cout << "Pass rate " << (((float)passed / total) * 100.0f) << "% (" << passed << "/"
-              << total << ")\n";
+    std::cout << fmt::format("Pass rate {:.2f}% ({}/{})\n", ((float)passed / total) * 100.0f,
+                             passed, total);
 
     return failed == 0;
 }

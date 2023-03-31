@@ -208,7 +208,7 @@ void Cpu::_loop(std::ostream& debug_stream)
         return;
     }
 
-    uint32_t insn = mmu.load_insn(pc);
+    uint32_t insn = mmu.fetch(pc);
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {

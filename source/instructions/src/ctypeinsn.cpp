@@ -447,11 +447,6 @@ void ctype::addw(Cpu& cpu, Decoder decoder)
     cpu.regs[rd] = SIGNEXTEND_CAST(cpu.regs[rd] + cpu.regs[rs2], int32_t);
 }
 
-static inline uint64_t bit_mask(uint64_t count)
-{
-    return (1ULL << count) - 1;
-}
-
 void ctype::j(Cpu& cpu, Decoder decoder)
 {
     uint64_t imm = ((decoder.insn >> 1U) & 0x800U) | ((decoder.insn << 2U) & 0x400U) |
