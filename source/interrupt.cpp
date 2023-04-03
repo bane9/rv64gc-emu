@@ -27,9 +27,9 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
             vt_offset = int_val * 4;
         }
 
-        cpu.pc = (stvec_val & ~3U) + vt_offset;
+        cpu.pc = (stvec_val & ~3ULL) + vt_offset;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~3U);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~3ULL);
 
         cpu.cregs.store(csr::Address::SCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -54,9 +54,9 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
             vt_offset = int_val * 4;
         }
 
-        cpu.pc = (mtvec_val & ~3U) + vt_offset;
+        cpu.pc = (mtvec_val & ~3ULL) + vt_offset;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~3U);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~3ULL);
 
         cpu.cregs.store(csr::Address::MCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -86,9 +86,9 @@ void exception::process(Cpu& cpu)
 
         uint64_t stvec_val = cpu.cregs.load(csr::Address::STVEC);
 
-        cpu.pc = stvec_val & ~3U;
+        cpu.pc = stvec_val & ~3ULL;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~3U);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~3ULL);
 
         cpu.cregs.store(csr::Address::SCAUSE, cpu.exc_val);
 
@@ -107,9 +107,9 @@ void exception::process(Cpu& cpu)
 
         uint64_t mtvec_val = cpu.cregs.load(csr::Address::MTVEC);
 
-        cpu.pc = mtvec_val & ~3U;
+        cpu.pc = mtvec_val & ~3ULL;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~3U);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~3ULL);
 
         cpu.cregs.store(csr::Address::MCAUSE, cpu.exc_val);
 

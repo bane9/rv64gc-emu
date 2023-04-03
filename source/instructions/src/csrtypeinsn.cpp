@@ -171,7 +171,9 @@ void csr::mret(Cpu& cpu, Decoder decoder)
 
 void csr::wfi(Cpu& cpu, Decoder decoder)
 {
-    // cpu.sleep = true;
+#if !CPU_TEST
+    cpu.sleep = true;
+#endif
 }
 
 void csr::sfencevma(Cpu& cpu, Decoder decoder)

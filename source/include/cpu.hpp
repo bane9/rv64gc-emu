@@ -156,6 +156,8 @@ class Cpu
     std::array<Fregister, 32> fregs = {};
     csr::Csr cregs;
     uint64_t pc = 0;
+    // For debugging purposes
+    uint64_t previous_pc = 0;
     Bus bus;
 
   public:

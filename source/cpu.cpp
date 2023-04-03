@@ -147,6 +147,20 @@ void Cpu::loop(std::ostream& debug_stream)
     {
         debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
                                     exception::Exception::get_exception_str(exc_val), pc);
+
+        if (mmu.mode != mmu::Mode::Bare)
+        {
+            auto old_exc_val = exc_val;
+            auto old_exc_data = exc_data;
+
+            debug_stream << fmt::format("Translated pc=0x{:0>8x}\n",
+                                        mmu.translate(pc, mmu::Mmu::AccessType::Instruction));
+
+            exc_val = old_exc_val;
+            exc_data = old_exc_data;
+        }
+
+        debug_stream << "\n";
 #if !CPU_TEST
         if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
             [[unlikely]]
@@ -165,6 +179,7 @@ void Cpu::loop(std::ostream& debug_stream)
     }
     else
     {
+        previous_pc = pc;
         pc += insn_size;
     }
 }
@@ -189,7 +204,7 @@ void Cpu::handle_irq(std::ostream& debug_stream)
 
     if (pending_interrupt != interrupt::Interrupt::None) [[unlikely]]
     {
-        if constexpr (CPU_VERBOSE_DEBUG)
+        if constexpr (1)
         {
             debug_stream << fmt::format("Interrupt: {}\n",
                                         interrupt::Interrupt::get_interrupt_str(pending_interrupt));

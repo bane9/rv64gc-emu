@@ -53,10 +53,13 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
         offset = address - mtime_addr;
     }
 
-    uint64_t mask = (1ULL << length) - 1ULL;
+    if (length != 64)
+    {
+        uint64_t mask = (1ULL << length) - 1ULL;
 
-    reg_value &= ~(mask << (offset * 8));
-    reg_value |= (value & mask) << (offset * 8);
+        reg_value &= ~(mask << (offset * 8));
+        reg_value |= (value & mask) << (offset * 8);
+    }
 
     if (helper::value_in_range(address, msip_addr, msip_addr + sizeof(msip)))
     {
@@ -86,12 +89,11 @@ void ClintDevice::tick(Cpu& cpu)
         cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::MSIP);
     }
 
-    if (mtimecmp > mtime)
-    {
-        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) & ~csr::Mask::MTIP);
-    }
-
     if (mtime >= mtimecmp)
+    {
+        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::MTIP);
+    }
+    else
     {
         cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) & ~csr::Mask::MTIP);
     }
