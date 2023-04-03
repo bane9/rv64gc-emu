@@ -137,7 +137,7 @@ class Cpu
     void loop(std::ostream& debug_stream = std::cout);
 
   public:
-    void _loop(std::ostream& debug_stream = std::cout);
+    uint32_t _loop(std::ostream& debug_stream = std::cout);
 
   public:
     void execute16(Decoder decoder);

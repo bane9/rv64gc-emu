@@ -141,12 +141,12 @@ void Cpu::run()
 
 void Cpu::loop(std::ostream& debug_stream)
 {
-    _loop(debug_stream);
+    uint32_t insn_size = _loop(debug_stream);
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {
         debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
-                                    exception::Exception::get_exception_str(exc_val), pc - 4);
+                                    exception::Exception::get_exception_str(exc_val), pc);
 #if !CPU_TEST
         if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
             [[unlikely]]
@@ -162,6 +162,10 @@ void Cpu::loop(std::ostream& debug_stream)
 #if !CPU_TEST
         clear_exception();
 #endif
+    }
+    else
+    {
+        pc += insn_size;
     }
 }
 
@@ -195,7 +199,7 @@ void Cpu::handle_irq(std::ostream& debug_stream)
     }
 }
 
-void Cpu::_loop(std::ostream& debug_stream)
+uint32_t Cpu::_loop(std::ostream& debug_stream)
 {
     regs[reg_abi_name::zero] = 0;
 
@@ -205,15 +209,14 @@ void Cpu::_loop(std::ostream& debug_stream)
 
     if (sleep) [[unlikely]]
     {
-        return;
+        return 0;
     }
 
     uint32_t insn = mmu.fetch(pc);
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {
-        pc += 4;
-        return;
+        return 4;
     }
 
     Decoder decoder = Decoder(insn);
@@ -228,8 +231,7 @@ void Cpu::_loop(std::ostream& debug_stream)
     if (insn == 0) [[unlikely]]
     {
         set_exception(exception::Exception::IllegalInstruction, insn);
-        pc += 4;
-        return;
+        return 4;
     }
 
     uint32_t insn_size = decoder.insn_size();
@@ -243,7 +245,7 @@ void Cpu::_loop(std::ostream& debug_stream)
         execute32(decoder);
     }
 
-    pc += insn_size;
+    return insn_size;
 }
 
 void Cpu::execute16(Decoder decoder)

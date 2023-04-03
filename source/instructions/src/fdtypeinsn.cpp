@@ -669,7 +669,7 @@ bool check_fs(Cpu& cpu)
 {
     if (!cpu.cregs.is_fpu_enabled())
     {
-        // cpu.set_exception(exception::Exception::IllegalInstruction);
+        cpu.set_exception(exception::Exception::IllegalInstruction);
         return false;
     }
 
