@@ -123,6 +123,7 @@ void csr::uret(Cpu& cpu, Decoder decoder)
 
 void csr::sret(Cpu& cpu, Decoder decoder)
 {
+    std::cout << "sret\n";
     if (cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::TSR) == 1 || cpu.mode == cpu::Mode::User)
     {
         cpu.set_exception(exception::Exception::IllegalInstruction, decoder.insn);
@@ -147,6 +148,7 @@ void csr::sret(Cpu& cpu, Decoder decoder)
 
 void csr::mret(Cpu& cpu, Decoder decoder)
 {
+    std::cout << "mret\n";
     if (cpu.mode != cpu::Mode::Machine)
     {
         cpu.set_exception(exception::Exception::IllegalInstruction, decoder.insn);

@@ -52,4 +52,9 @@ template <typename T> bool value_in_range(T value, T lower_range, T upper_range)
 {
     return (value >= lower_range) && (value < upper_range);
 }
+
+template <typename T> bool value_in_range_inclusive(T value, T lower_range, T upper_range)
+{
+    return (value >= lower_range) && (value <= upper_range);
+}
 } // namespace helper

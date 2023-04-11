@@ -105,30 +105,40 @@ interrupt::Interrupt::InterruptValue Cpu::get_pending_interrupt()
     uint64_t mie = cregs.load(csr::Address::MIE);
     uint64_t mip = cregs.load(csr::Address::MIP);
 
-    switch (mie & mip)
+    uint64_t pending = mie & mip;
+
+    if (pending & csr::Mask::MEIP)
     {
-    case csr::Mask::MEIP:
         cregs.write_bit(csr::Address::MIP, csr::Mask::MEIP_BIT, 0);
         return interrupt::Interrupt::MachineExternal;
-    case csr::Mask::MSIP:
+    }
+    else if (pending & csr::Mask::MSIP)
+    {
         cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP_BIT, 0);
         return interrupt::Interrupt::MachineSoftware;
-    case csr::Mask::MTIP:
+    }
+    else if (pending & csr::Mask::MTIP)
+    {
         cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP_BIT, 0);
         return interrupt::Interrupt::MachineTimer;
-    case csr::Mask::SEIP:
+    }
+    else if (pending & csr::Mask::SEIP)
+    {
         cregs.write_bit(csr::Address::MIP, csr::Mask::SEIP_BIT, 0);
         return interrupt::Interrupt::SupervisorExternal;
-    case csr::Mask::SSIP:
+    }
+    else if (pending & csr::Mask::SSIP)
+    {
         cregs.write_bit(csr::Address::MIP, csr::Mask::SSIP_BIT, 0);
         return interrupt::Interrupt::SupervisorSoftware;
-    case csr::Mask::STIP:
+    }
+    else if (pending & csr::Mask::STIP)
+    {
         cregs.write_bit(csr::Address::MIP, csr::Mask::STIP_BIT, 0);
         return interrupt::Interrupt::SupervisorTimer;
-    default:
-        cregs.store(csr::Address::MIP, 0);
-        return interrupt::Interrupt::None;
     }
+
+    return interrupt::Interrupt::None;
 }
 
 void Cpu::run()
@@ -145,22 +155,10 @@ void Cpu::loop(std::ostream& debug_stream)
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {
-        debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
-                                    exception::Exception::get_exception_str(exc_val), pc);
+        // debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
+        //                             exception::Exception::get_exception_str(exc_val), pc);
 
-        if (mmu.mode != mmu::Mode::Bare)
-        {
-            auto old_exc_val = exc_val;
-            auto old_exc_data = exc_data;
-
-            debug_stream << fmt::format("Translated pc=0x{:0>8x}\n",
-                                        mmu.translate(pc, mmu::Mmu::AccessType::Instruction));
-
-            exc_val = old_exc_val;
-            exc_data = old_exc_data;
-        }
-
-        debug_stream << "\n";
+        // debug_stream << "\n";
 #if !CPU_TEST
         if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
             [[unlikely]]
@@ -170,7 +168,6 @@ void Cpu::loop(std::ostream& debug_stream)
             exit(1);
         }
 #endif
-
         exception::process(*this);
 
 #if !CPU_TEST
@@ -179,7 +176,7 @@ void Cpu::loop(std::ostream& debug_stream)
     }
     else
     {
-        previous_pc = pc;
+        // previous_pc = pc;
         pc += insn_size;
     }
 }
@@ -206,8 +203,8 @@ void Cpu::handle_irq(std::ostream& debug_stream)
     {
         if constexpr (1)
         {
-            debug_stream << fmt::format("Interrupt: {}\n",
-                                        interrupt::Interrupt::get_interrupt_str(pending_interrupt));
+            // debug_stream << fmt::format("Interrupt: {}\n",
+            //                             interrupt::Interrupt::get_interrupt_str(pending_interrupt));
         }
 
         interrupt::process(*this, pending_interrupt);

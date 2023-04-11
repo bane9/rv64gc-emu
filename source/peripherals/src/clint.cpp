@@ -3,33 +3,29 @@
 #include "helper.hpp"
 #include <fmt/core.h>
 
-ClintDevice::ClintDevice()
-{
-    last_ms = helper::get_milliseconds();
-}
-
 uint64_t ClintDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
     uint64_t reg_value = 0;
     uint64_t offset = 0;
 
-    if (helper::value_in_range(address, msip_addr, msip_addr + sizeof(msip)))
+    if (helper::value_in_range_inclusive(address, msip_addr, msip_addr + sizeof(msip)))
     {
         reg_value = msip;
         offset = address - msip_addr;
     }
-    else if (helper::value_in_range(address, mtimecmp_addr, mtimecmp_addr + sizeof(mtimecmp)))
+    else if (helper::value_in_range_inclusive(address, mtimecmp_addr,
+                                              mtimecmp_addr + sizeof(mtimecmp)))
     {
         reg_value = mtimecmp;
         offset = address - mtimecmp_addr;
     }
-    else if (helper::value_in_range(address, mtime_addr, mtime_addr + sizeof(mtime)))
+    else if (helper::value_in_range_inclusive(address, mtime_addr, mtime_addr + sizeof(mtime)))
     {
         reg_value = mtime;
         offset = address - mtime_addr;
     }
 
-    return (reg_value >> offset * 8ULL) & ((1ULL << length) - 1ULL);
+    return (reg_value >> (offset * 8ULL)) & ((1ULL << length) - 1ULL);
 }
 
 void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t length)
@@ -37,17 +33,18 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
     uint64_t reg_value = 0;
     uint64_t offset = 0;
 
-    if (helper::value_in_range(address, msip_addr, msip_addr + sizeof(msip)))
+    if (helper::value_in_range_inclusive(address, msip_addr, msip_addr + sizeof(msip)))
     {
         reg_value = msip;
         offset = address - msip_addr;
     }
-    else if (helper::value_in_range(address, mtimecmp_addr, mtimecmp_addr + sizeof(mtimecmp)))
+    else if (helper::value_in_range_inclusive(address, mtimecmp_addr,
+                                              mtimecmp_addr + sizeof(mtimecmp)))
     {
         reg_value = mtimecmp;
         offset = address - mtimecmp_addr;
     }
-    else if (helper::value_in_range(address, mtime_addr, mtime_addr + sizeof(mtime)))
+    else if (helper::value_in_range_inclusive(address, mtime_addr, mtime_addr + sizeof(mtime)))
     {
         reg_value = mtime;
         offset = address - mtime_addr;
@@ -61,15 +58,16 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
         reg_value |= (value & mask) << (offset * 8);
     }
 
-    if (helper::value_in_range(address, msip_addr, msip_addr + sizeof(msip)))
+    if (helper::value_in_range_inclusive(address, msip_addr, msip_addr + sizeof(msip)))
     {
         msip = reg_value;
     }
-    else if (helper::value_in_range(address, mtimecmp_addr, mtimecmp_addr + sizeof(mtimecmp)))
+    else if (helper::value_in_range_inclusive(address, mtimecmp_addr,
+                                              mtimecmp_addr + sizeof(mtimecmp)))
     {
         mtimecmp = reg_value;
     }
-    else if (helper::value_in_range(address, mtime_addr, mtime_addr + sizeof(mtime)))
+    else if (helper::value_in_range_inclusive(address, mtime_addr, mtime_addr + sizeof(mtime)))
     {
         mtime = reg_value;
     }
@@ -77,12 +75,8 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
 
 void ClintDevice::tick(Cpu& cpu)
 {
-    uint64_t current_ms = helper::get_milliseconds();
-
-    mtime += current_ms - last_ms;
-    last_ms = current_ms;
-
-    cpu.cregs.store(csr::Address::TIME, mtime);
+    ++mtime;
+    cpu.cregs.store(csr::Address::TIME, cpu.cregs.load(csr::Address::TIME) + 1);
 
     if ((msip & 1) != 0)
     {

@@ -667,7 +667,7 @@ static void set_exceptions(Cpu& cpu)
 
 bool check_fs(Cpu& cpu)
 {
-    if (!cpu.cregs.is_fpu_enabled())
+    if (!cpu.cregs.is_fpu_enabled()) [[unlikely]]
     {
         cpu.set_exception(exception::Exception::IllegalInstruction);
         return false;
@@ -680,7 +680,7 @@ bool check_fs(Cpu& cpu)
 
 void fdtype::fs(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -703,7 +703,7 @@ void fdtype::fs(Cpu& cpu, Decoder decoder)
 
 void fdtype::fl(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -726,7 +726,7 @@ void fdtype::fl(Cpu& cpu, Decoder decoder)
 
 void fdtype::fmadd(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -749,7 +749,7 @@ void fdtype::fmadd(Cpu& cpu, Decoder decoder)
 
 void fdtype::fmsub(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -772,7 +772,7 @@ void fdtype::fmsub(Cpu& cpu, Decoder decoder)
 
 void fdtype::fnmadd(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -795,7 +795,7 @@ void fdtype::fnmadd(Cpu& cpu, Decoder decoder)
 
 void fdtype::fnmsub(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }
@@ -818,7 +818,7 @@ void fdtype::fnmsub(Cpu& cpu, Decoder decoder)
 
 void fdtype::fother(Cpu& cpu, Decoder decoder)
 {
-    if (!fdimpl::check_fs(cpu))
+    if (!fdimpl::check_fs(cpu)) [[unlikely]]
     {
         return;
     }

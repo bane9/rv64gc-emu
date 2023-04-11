@@ -180,10 +180,10 @@ class Terminal
 
     void input_write(const char* bytes, size_t len)
     {
-        // for (size_t i = 0; i < len; i++)
-        // {
-        //     std::cout << bytes[i];
-        // }
+        for (size_t i = 0; i < len; i++)
+        {
+            std::cout << bytes[i];
+        }
 
         vterm_input_write(vterm, bytes, len);
     }

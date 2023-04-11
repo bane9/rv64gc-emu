@@ -97,21 +97,21 @@ struct Mask
         TSR = 22,
     };
 
-    enum Bit
+    enum Bit : uint64_t
     {
-        SSIP_BIT = 1U,
-        MSIP_BIT = 3U,
-        STIP_BIT = 5U,
-        MTIP_BIT = 7U,
-        SEIP_BIT = 9U,
-        MEIP_BIT = 11U,
+        SSIP_BIT = 1ULL,
+        MSIP_BIT = 3ULL,
+        STIP_BIT = 5ULL,
+        MTIP_BIT = 7ULL,
+        SEIP_BIT = 9ULL,
+        MEIP_BIT = 11ULL,
 
-        SSIP = 1U << SSIP_BIT,
-        MSIP = 1U << MSIP_BIT,
-        STIP = 1U << STIP_BIT,
-        MTIP = 1U << MTIP_BIT,
-        SEIP = 1U << SEIP_BIT,
-        MEIP = 1U << MEIP_BIT,
+        SSIP = 1ULL << SSIP_BIT,
+        MSIP = 1ULL << MSIP_BIT,
+        STIP = 1ULL << STIP_BIT,
+        MTIP = 1ULL << MTIP_BIT,
+        SEIP = 1ULL << SEIP_BIT,
+        MEIP = 1ULL << MEIP_BIT,
     };
 };
 

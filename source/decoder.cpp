@@ -240,10 +240,14 @@ void Decoder::dump(std::ostream& stream) const
     stream << fmt::format("insn size: {}\n", insn_size());
     stream << fmt::format("opcode: {} (0x{:0>2x})\n", opcode_str, opcode());
     stream << fmt::format("compressed opcode: 0x{:x}\n", compressed_opcode());
-    stream << fmt::format("source reg 1: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs1()], rs1());
-    stream << fmt::format("source reg 2: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs2()], rs2());
-    stream << fmt::format("source reg 3: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs3()], rs3());
-    stream << fmt::format("destination reg: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rd()], rd());
+    stream << fmt::format("source reg 1: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs1()],
+                          (uint64_t)rs1());
+    stream << fmt::format("source reg 2: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs2()],
+                          (uint64_t)rs2());
+    stream << fmt::format("source reg 3: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rs3()],
+                          (uint64_t)rs3());
+    stream << fmt::format("destination reg: {} (0x{:0>2x})\n", Cpu::reg_name_abi_str[rd()],
+                          (uint64_t)rd());
 
     stream << fmt::format("imm_i: {:0>4x}\n", imm_i());
     stream << fmt::format("imm_s: {:0>4x}\n", imm_s());

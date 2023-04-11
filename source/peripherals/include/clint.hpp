@@ -6,7 +6,7 @@
 class ClintDevice : public BusDevice
 {
   public:
-    ClintDevice();
+    ClintDevice() = default;
     virtual ~ClintDevice() = default;
 
     virtual uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
@@ -24,10 +24,9 @@ class ClintDevice : public BusDevice
     virtual std::string_view get_peripheral_name() const override;
 
   public:
-    uint32_t msip = 0;
-    uint64_t mtimecmp = 0;
     uint64_t mtime = 0;
-    uint64_t last_ms;
+    uint64_t mtimecmp = 0;
+    uint32_t msip = 0;
 
   public:
     static constexpr uint64_t base_addr = clint_base_addr;

@@ -1,5 +1,6 @@
 #include "cpu.hpp"
 #include "interupt.hpp"
+#include <fmt/core.h>
 
 void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 {
@@ -10,12 +11,15 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
     cpu.sleep = false;
 
-    uint64_t pc = cpu.pc;
+    uint64_t pc = cpu.pc - 4;
     cpu::Mode mode = cpu.mode;
 
     bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> int_val) & 1;
+    std::cout << fmt::format(
+        "int = {}, mideleg={}, mode={}, mode_check={}, happened at pc=0x{:0>8x}\n", (int)int_val,
+        mideleg_flag, (int)cpu.mode, mode <= cpu::Mode::Supervisor, cpu.pc);
 
-    if (mode <= cpu::Mode::Supervisor && mideleg_flag && int_val != Interrupt::MachineTimer)
+    if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && mideleg_flag)
     {
         cpu.mode = cpu::Mode::Supervisor;
 
@@ -29,7 +33,7 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
         cpu.pc = (stvec_val & ~3ULL) + vt_offset;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~3ULL);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~1ULL);
 
         cpu.cregs.store(csr::Address::SCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -56,7 +60,7 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
         cpu.pc = (mtvec_val & ~3ULL) + vt_offset;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~3ULL);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~1ULL);
 
         cpu.cregs.store(csr::Address::MCAUSE, (1ULL << 63ULL) | int_val);
 
@@ -78,9 +82,12 @@ void exception::process(Cpu& cpu)
     uint64_t pc = cpu.pc;
     cpu::Mode mode = cpu.mode;
 
-    bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> cpu.exc_val) & 1;
+    bool medeleg_flag = (cpu.cregs.load(csr::Address::MEDELEG) >> cpu.exc_val) & 1;
+    std::cout << fmt::format(
+        "exception = {}, medeleg={}, mode={}, mode_check={}, happened at pc=0x{:0>8x}\n",
+        (int)cpu.exc_val, medeleg_flag, (int)cpu.mode, mode <= cpu::Mode::Supervisor, cpu.pc);
 
-    if (mode <= cpu::Mode::Supervisor && mideleg_flag)
+    if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && medeleg_flag)
     {
         cpu.mode = cpu::Mode::Supervisor;
 
@@ -88,7 +95,7 @@ void exception::process(Cpu& cpu)
 
         cpu.pc = stvec_val & ~3ULL;
 
-        cpu.cregs.store(csr::Address::SEPC, pc & ~3ULL);
+        cpu.cregs.store(csr::Address::SEPC, pc & ~1ULL);
 
         cpu.cregs.store(csr::Address::SCAUSE, cpu.exc_val);
 
@@ -109,7 +116,7 @@ void exception::process(Cpu& cpu)
 
         cpu.pc = mtvec_val & ~3ULL;
 
-        cpu.cregs.store(csr::Address::MEPC, pc & ~3ULL);
+        cpu.cregs.store(csr::Address::MEPC, pc & ~1ULL);
 
         cpu.cregs.store(csr::Address::MCAUSE, cpu.exc_val);
 
