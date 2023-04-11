@@ -28,6 +28,7 @@ struct Interrupt
     static const char* get_interrupt_str(interrupt::Interrupt::InterruptValue value);
 };
 
+Interrupt::InterruptValue get_pending_interrupt(Cpu& cpu);
 void process(Cpu& cpu, Interrupt::InterruptValue int_val);
 
 } // namespace interrupt

@@ -50,6 +50,7 @@ struct Address
 
         CYCLE = 0xc00,
         TIME = 0xc01,
+        TIMEMS = 0xc10,
 
         TDATA1 = 0x7a1,
 

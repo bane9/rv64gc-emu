@@ -28,20 +28,20 @@ class GpuDevice : public BusDevice
     GpuDevice(const char* screen_title, const char* font_path, uint32_t width, uint32_t height);
     virtual ~GpuDevice();
 
-    virtual uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
-    virtual void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
+    uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
+    void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
 
   public:
     void tick(Cpu& cpu) override;
     std::optional<uint32_t> is_interrupting() override;
 
   public:
-    virtual uint64_t get_base_address() const override;
-    virtual uint64_t get_end_address() const override;
+    uint64_t get_base_address() const override;
+    uint64_t get_end_address() const override;
 
-    virtual void dump(std::ostream& stream) const override;
+    void dump(std::ostream& stream) const override;
 
-    virtual std::string_view get_peripheral_name() const override;
+    std::string_view get_peripheral_name() const override;
 
   public:
     static constexpr uint64_t uart_base_addr = cfg::uart_base_address;
@@ -88,7 +88,7 @@ class GpuDevice : public BusDevice
     TTF_Font* font;
 
     int term_rows = 32;
-    int term_cols = 80;
+    int term_cols = 100;
 
   public:
     bool is_uart_interrupting = false;

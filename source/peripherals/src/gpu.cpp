@@ -17,7 +17,7 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
     channels = 3;
 
     atexit(SDL_Quit); // There are several event/exception related exit points
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
     SDL_ShowCursor(SDL_DISABLE);
@@ -207,7 +207,7 @@ void GpuDevice::tick(Cpu& cpu)
 {
     uint64_t current_tick = helper::get_milliseconds();
 
-    if (current_tick - last_tick > 60) [[unlikely]]
+    if (current_tick - last_tick > 10)
     {
         last_tick = current_tick;
         SDL_Event e;

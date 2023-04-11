@@ -99,7 +99,9 @@ int main(int argc, char* argv[])
 
     Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address());
 
-    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 800, 600);
+    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
+
+    RamDevice* dtb_rom = nullptr;
 
     if (dtb_path)
     {
@@ -108,7 +110,7 @@ int main(int argc, char* argv[])
             error_exit(argv, "dtb path invalid");
         }
 
-        RamDevice* dtb_rom = new RamDevice(0x1000, 0xe000);
+        dtb_rom = new RamDevice(0x1000, 0xe000);
 
         dtb_rom->set_data(helper::load_file(dtb_path));
         cpu.regs[Cpu::reg_abi_name::a1] = dtb_rom->get_base_address();
@@ -134,6 +136,11 @@ int main(int argc, char* argv[])
     cpu.bus.add_device(&gpu);
     cpu.bus.add_device(&clint);
     cpu.bus.add_device(&plic);
+
+    if (dtb_rom != nullptr)
+    {
+        cpu.bus.add_device(dtb_rom);
+    }
 
     cpu.run();
 }

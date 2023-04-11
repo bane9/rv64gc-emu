@@ -6,6 +6,7 @@
 #include "ctypeinsn.hpp"
 #include "decoder.hpp"
 #include "fdtypeinsn.hpp"
+#include "gpu.hpp"
 #include "i64insn.hpp"
 #include "itypeinsn.hpp"
 #include "loadinsn.hpp"
@@ -68,79 +69,6 @@ void Cpu::dump_bus_devices(std::ostream& stream)
     }
 }
 
-interrupt::Interrupt::InterruptValue Cpu::get_pending_interrupt()
-{
-    switch (mode)
-    {
-    case cpu::Mode::Machine:
-        if (cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MIE) == 0 && !sleep)
-        {
-            return interrupt::Interrupt::None;
-        }
-        break;
-    case cpu::Mode::Supervisor:
-        if (cregs.read_bit_sstatus(csr::Mask::SSTATUSBit::SIE) == 0 && !sleep)
-        {
-            return interrupt::Interrupt::None;
-        }
-        break;
-    default:
-        break;
-    }
-
-    for (BusDevice* device : bus.get_device_list())
-    {
-        std::optional<uint32_t> irqn = device->is_interrupting();
-
-        if (irqn)
-        {
-            PlicDevice* plic = static_cast<PlicDevice*>(bus.find_bus_device(plic_base_addr));
-            plic->update_pending(*irqn);
-
-            cregs.store(csr::Address::MIP, cregs.load(csr::Address::MIP) | csr::Mask::SEIP);
-            break;
-        }
-    }
-
-    uint64_t mie = cregs.load(csr::Address::MIE);
-    uint64_t mip = cregs.load(csr::Address::MIP);
-
-    uint64_t pending = mie & mip;
-
-    if (pending & csr::Mask::MEIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::MEIP_BIT, 0);
-        return interrupt::Interrupt::MachineExternal;
-    }
-    else if (pending & csr::Mask::MSIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP_BIT, 0);
-        return interrupt::Interrupt::MachineSoftware;
-    }
-    else if (pending & csr::Mask::MTIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP_BIT, 0);
-        return interrupt::Interrupt::MachineTimer;
-    }
-    else if (pending & csr::Mask::SEIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::SEIP_BIT, 0);
-        return interrupt::Interrupt::SupervisorExternal;
-    }
-    else if (pending & csr::Mask::SSIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::SSIP_BIT, 0);
-        return interrupt::Interrupt::SupervisorSoftware;
-    }
-    else if (pending & csr::Mask::STIP)
-    {
-        cregs.write_bit(csr::Address::MIP, csr::Mask::STIP_BIT, 0);
-        return interrupt::Interrupt::SupervisorTimer;
-    }
-
-    return interrupt::Interrupt::None;
-}
-
 void Cpu::run()
 {
     while (true)
@@ -153,12 +81,28 @@ void Cpu::loop(std::ostream& debug_stream)
 {
     uint32_t insn_size = _loop(debug_stream);
 
+    bus.tick_devices(*this);
+
+    interrupt::Interrupt::InterruptValue pending_interrupt =
+        interrupt::get_pending_interrupt(*this);
+
+    if (pending_interrupt != interrupt::Interrupt::None) [[unlikely]]
+    {
+        if constexpr (CPU_VERBOSE_DEBUG)
+        {
+            debug_stream << fmt::format("Interrupt: {}\n",
+                                        interrupt::Interrupt::get_interrupt_str(pending_interrupt));
+        }
+
+        interrupt::process(*this, pending_interrupt);
+
+        return;
+    }
+
     if (exc_val != exception::Exception::None) [[unlikely]]
     {
-        // debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
-        //                             exception::Exception::get_exception_str(exc_val), pc);
-
-        // debug_stream << "\n";
+        debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
+                                    exception::Exception::get_exception_str(exc_val), pc);
 #if !CPU_TEST
         if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
             [[unlikely]]
@@ -173,12 +117,12 @@ void Cpu::loop(std::ostream& debug_stream)
 #if !CPU_TEST
         clear_exception();
 #endif
+
+        return;
     }
-    else
-    {
-        // previous_pc = pc;
-        pc += insn_size;
-    }
+
+    // previous_pc = pc;
+    pc += insn_size;
 }
 
 void Cpu::set_exception(exception::Exception::ExceptionValue value, uint64_t exc_data)
@@ -193,31 +137,11 @@ void Cpu::clear_exception()
     exc_data = 0;
 }
 
-void Cpu::handle_irq(std::ostream& debug_stream)
-{
-    bus.tick_devices(*this);
-
-    interrupt::Interrupt::InterruptValue pending_interrupt = get_pending_interrupt();
-
-    if (pending_interrupt != interrupt::Interrupt::None) [[unlikely]]
-    {
-        if constexpr (1)
-        {
-            // debug_stream << fmt::format("Interrupt: {}\n",
-            //                             interrupt::Interrupt::get_interrupt_str(pending_interrupt));
-        }
-
-        interrupt::process(*this, pending_interrupt);
-    }
-}
-
 uint32_t Cpu::_loop(std::ostream& debug_stream)
 {
     regs[reg_abi_name::zero] = 0;
 
     cregs.store(csr::Address::CYCLE, cregs.load(csr::Address::CYCLE) + 1);
-
-    handle_irq(debug_stream);
 
     if (sleep) [[unlikely]]
     {

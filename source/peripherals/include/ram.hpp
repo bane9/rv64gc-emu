@@ -13,18 +13,18 @@ class RamDevice : public BusDevice
     RamDevice(uint64_t rom_start_address, uint64_t rom_end_offset, std::vector<uint8_t> data);
     virtual ~RamDevice() = default;
 
-    virtual uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
-    virtual void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
+    uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
+    void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
 
   public:
     void set_data(std::vector<uint8_t> data);
 
   public:
-    virtual uint64_t get_base_address() const override;
-    virtual uint64_t get_end_address() const override;
+    uint64_t get_base_address() const override;
+    uint64_t get_end_address() const override;
 
-    virtual void dump(std::ostream& stream) const override;
-    virtual std::string_view get_peripheral_name() const override;
+    void dump(std::ostream& stream) const override;
+    std::string_view get_peripheral_name() const override;
 
   public:
     uint64_t base_addr;

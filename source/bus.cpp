@@ -1,16 +1,14 @@
 #include "bus.hpp"
 
+#include "clint.hpp"
 #include "cpu.hpp"
+#include "gpu.hpp"
 #include <algorithm>
 #include <fmt/core.h>
 
 void Bus::add_device(BusDevice* bus_device)
 {
     bus_devices.push_back(bus_device);
-
-    std::sort(bus_devices.begin(), bus_devices.end(), [](BusDevice* dev1, BusDevice* dev2) {
-        return dev1->get_base_address() < dev2->get_base_address();
-    });
 }
 
 uint64_t Bus::load(Cpu& cpu, uint64_t address, uint64_t length)
@@ -46,11 +44,13 @@ BusDevice* Bus::find_bus_device(uint64_t address) const
 {
     auto devices = bus_devices.data();
 
-    for (int i = 0; i < bus_devices.size(); i++)
+    for (size_t i = 0; i < bus_devices.size(); i++)
     {
-        if (address >= devices[i]->get_base_address() && address < devices[i]->get_end_address())
+        BusDevice* device = devices[i];
+
+        if (address >= device->get_base_address() && address < device->get_end_address())
         {
-            return devices[i];
+            return device;
         }
     }
 
@@ -59,10 +59,15 @@ BusDevice* Bus::find_bus_device(uint64_t address) const
 
 void Bus::tick_devices(Cpu& cpu)
 {
-    for (BusDevice* device : bus_devices)
-    {
-        device->tick(cpu);
-    }
+#if !CPU_TEST
+    static gpu::GpuDevice* gpu_device =
+        static_cast<gpu::GpuDevice*>(find_bus_device(gpu::cfg::uart_base_address));
+
+    static ClintDevice* clint_device = static_cast<ClintDevice*>(find_bus_device(clint_base_addr));
+
+    gpu_device->tick(cpu);
+    clint_device->tick(cpu);
+#endif
 }
 
 std::span<BusDevice*> Bus::get_device_list()

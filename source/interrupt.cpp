@@ -1,6 +1,88 @@
 #include "cpu.hpp"
+#include "gpu.hpp"
 #include "interupt.hpp"
+#include "plic.hpp"
 #include <fmt/core.h>
+
+interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
+{
+    switch (cpu.mode)
+    {
+    case cpu::Mode::Machine:
+        if (cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MIE) == 0 && !cpu.sleep)
+        {
+            return interrupt::Interrupt::None;
+        }
+        break;
+    case cpu::Mode::Supervisor:
+        if (cpu.cregs.read_bit_sstatus(csr::Mask::SSTATUSBit::SIE) == 0 && !cpu.sleep)
+        {
+            return interrupt::Interrupt::None;
+        }
+        break;
+    default:
+        break;
+    }
+
+#if !CPU_TEST
+    static gpu::GpuDevice* gpu_device =
+        static_cast<gpu::GpuDevice*>(cpu.bus.find_bus_device(gpu::cfg::uart_base_address));
+
+    static PlicDevice* plic_device =
+        static_cast<PlicDevice*>(cpu.bus.find_bus_device(plic_base_addr));
+
+    std::optional<uint32_t> irqn = gpu_device->is_interrupting();
+
+    if (irqn) [[unlikely]]
+    {
+        plic_device->update_pending(*irqn);
+
+        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::SEIP);
+    }
+#endif
+
+    uint64_t mie = cpu.cregs.load(csr::Address::MIE);
+    uint64_t mip = cpu.cregs.load(csr::Address::MIP);
+
+    uint64_t pending = mie & mip;
+
+    if (pending == 0) [[likely]]
+    {
+        return interrupt::Interrupt::None;
+    }
+    if (pending & csr::Mask::MEIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MEIP_BIT, 0);
+        return interrupt::Interrupt::MachineExternal;
+    }
+    else if (pending & csr::Mask::MSIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP_BIT, 0);
+        return interrupt::Interrupt::MachineSoftware;
+    }
+    else if (pending & csr::Mask::MTIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP_BIT, 0);
+        return interrupt::Interrupt::MachineTimer;
+    }
+    else if (pending & csr::Mask::SEIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::SEIP_BIT, 0);
+        return interrupt::Interrupt::SupervisorExternal;
+    }
+    else if (pending & csr::Mask::SSIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::SSIP_BIT, 0);
+        return interrupt::Interrupt::SupervisorSoftware;
+    }
+    else if (pending & csr::Mask::STIP)
+    {
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::STIP_BIT, 0);
+        return interrupt::Interrupt::SupervisorTimer;
+    }
+
+    return interrupt::Interrupt::None;
+}
 
 void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 {
@@ -11,13 +93,10 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
     cpu.sleep = false;
 
-    uint64_t pc = cpu.pc - 4;
+    uint64_t pc = cpu.pc;
     cpu::Mode mode = cpu.mode;
 
     bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> int_val) & 1;
-    std::cout << fmt::format(
-        "int = {}, mideleg={}, mode={}, mode_check={}, happened at pc=0x{:0>8x}\n", (int)int_val,
-        mideleg_flag, (int)cpu.mode, mode <= cpu::Mode::Supervisor, cpu.pc);
 
     if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && mideleg_flag)
     {
@@ -83,9 +162,6 @@ void exception::process(Cpu& cpu)
     cpu::Mode mode = cpu.mode;
 
     bool medeleg_flag = (cpu.cregs.load(csr::Address::MEDELEG) >> cpu.exc_val) & 1;
-    std::cout << fmt::format(
-        "exception = {}, medeleg={}, mode={}, mode_check={}, happened at pc=0x{:0>8x}\n",
-        (int)cpu.exc_val, medeleg_flag, (int)cpu.mode, mode <= cpu::Mode::Supervisor, cpu.pc);
 
     if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && medeleg_flag)
     {

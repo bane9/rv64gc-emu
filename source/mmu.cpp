@@ -65,7 +65,7 @@ void Mmu::update()
     uint64_t mode = helper::read_bits(satp, 63, 60);
     uint64_t ppn = helper::read_bits(satp, 43, 0);
 
-    this->mppn = ppn << 12;
+    this->mppn = ppn << 12ULL;
     this->mode = static_cast<Mode::ModeValue>(mode);
 
     assert(mode == Mode::Bare || mode == Mode::SV39 || mode == Mode::SV48 || mode == Mode::SV57);
@@ -92,7 +92,7 @@ std::array<uint64_t, 5> Mmu::get_vpn(uint64_t address)
 
     for (int i = 0; i < get_levels(); i++)
     {
-        vpn[i] = (address >> (12U + i * 9U)) & 0x1ffU;
+        vpn[i] = (address >> (12ULL + i * 9ULL)) & 0x1ffULL;
     }
 
     return vpn;
@@ -104,7 +104,7 @@ std::array<uint64_t, 5> Mmu::get_ppn(uint64_t pte)
 
     for (int i = 0; i < get_levels(); i++)
     {
-        ppn[i] = (pte >> (10U + i * 9U)) & 0x1ffU;
+        ppn[i] = (pte >> (10ULL + i * 9ULL)) & 0x1ffULL;
     }
 
     return ppn;
@@ -187,7 +187,7 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
             break;
         }
 
-        a = ((pte >> 10U) & 0xfffffffffffULL) * page_size;
+        a = ((pte >> 10ULL) & 0xfffffffffffULL) * page_size;
     }
 
     if (i < 0)
@@ -260,34 +260,34 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 
         if (pte == cmp)
         {
-            pte |= 1 << Pte::Accessed;
+            pte |= 1ULL << Pte::Accessed;
 
             if (acces_type == AccessType::Store)
             {
-                pte |= 1 << Pte::Dirty;
+                pte |= 1ULL << Pte::Dirty;
             }
 
             cpu.bus.store(cpu, pte_addr, pte, 64);
         }
     }
 
-    uint64_t phys_addr = address & 0xfffU;
+    uint64_t phys_addr = address & 0xfffULL;
 
     if (i == 0)
     {
-        uint64_t temp = (pte >> 10U) & 0xfffffffffffULL;
+        uint64_t temp = (pte >> 10ULL) & 0xfffffffffffULL;
 
-        return phys_addr | (temp << 12U);
+        return phys_addr | (temp << 12ULL);
     }
 
     for (uint64_t j = 0; j < i; j++)
     {
-        phys_addr |= vpn[j] << (12U + (j * 9U));
+        phys_addr |= vpn[j] << (12ULL + (j * 9ULL));
     }
 
     for (uint64_t j = i; j < levels; j++)
     {
-        phys_addr |= ppn[j] << (12U + (j * 9U));
+        phys_addr |= ppn[j] << (12ULL + (j * 9ULL));
     }
 
     return phys_addr;

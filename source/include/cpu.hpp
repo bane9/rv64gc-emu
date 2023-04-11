@@ -133,7 +133,7 @@ class Cpu
     };
 
   public:
-    void run();
+    [[noreturn]] void run();
     void loop(std::ostream& debug_stream = std::cout);
 
   public:
@@ -144,12 +144,12 @@ class Cpu
     void execute32(Decoder decoder);
 
   public:
-    interrupt::Interrupt::InterruptValue get_pending_interrupt();
-    void handle_irq(std::ostream& debug_stream);
-
-  public:
     void set_exception(exception::Exception::ExceptionValue value, uint64_t exc_data = 0);
     void clear_exception();
+
+  public:
+    Bus bus;
+    mmu::Mmu mmu;
 
   public:
     std::array<uint64_t, 32> regs = {};
@@ -158,10 +158,6 @@ class Cpu
     uint64_t pc = 0;
     // For debugging purposes
     uint64_t previous_pc = 0;
-    Bus bus;
-
-  public:
-    mmu::Mmu mmu;
 
   public:
     cpu::Mode mode;

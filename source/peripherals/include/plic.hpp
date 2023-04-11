@@ -10,8 +10,8 @@ class PlicDevice : public BusDevice
     PlicDevice() = default;
     virtual ~PlicDevice() = default;
 
-    virtual uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
-    virtual void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
+    uint64_t load(Bus& bus, uint64_t address, uint64_t length) override;
+    void store(Bus& bus, uint64_t address, uint64_t value, uint64_t length) override;
 
   public:
     void update_pending(uint64_t irq);
@@ -20,12 +20,12 @@ class PlicDevice : public BusDevice
     bool is_enabled(uint64_t context, uint64_t irq);
 
   public:
-    virtual uint64_t get_base_address() const override;
-    virtual uint64_t get_end_address() const override;
+    uint64_t get_base_address() const override;
+    uint64_t get_end_address() const override;
 
-    virtual void dump(std::ostream& stream) const override;
+    void dump(std::ostream& stream) const override;
 
-    virtual std::string_view get_peripheral_name() const override;
+    std::string_view get_peripheral_name() const override;
 
   public:
     std::array<uint32_t, 1024> prioprity = {};
