@@ -57,6 +57,10 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
         reg_value &= ~(mask << (offset * 8));
         reg_value |= (value & mask) << (offset * 8);
     }
+    else
+    {
+        reg_value = value;
+    }
 
     if (helper::value_in_range_inclusive(address, msip_addr, msip_addr + sizeof(msip)))
     {
