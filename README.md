@@ -2,11 +2,18 @@
 
 [![Build and Test](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml)
 
-<p align="center">
-<img src="demo.gif" width="404" height="330">
-</p>
+RISCV emulator written in C++20
 
-RISCV emulator written in C++17
+## Table of Contents
+- [Features](#features)
+- [Building](#building)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Supported Software](#supported-software)
+- [Dependencies/Credits](#dependenciescredits)
+- [Native CLI Option](#native-cli-option)
+- [Supported Platforms](#supported-platforms)
+- [License](#license)
 
 ## Features
 
@@ -20,7 +27,7 @@ RISCV emulator written in C++17
 - bios (firmware), kernel and dtb loading
 - Passes all [RISCV imafdcsu isa tests](https://github.com/riscv-software-src/riscv-tests) (at least on M2, on x86_64 they are failing)
 
-## Bulding
+## Building
 
 First, recursively pull this repo 
 
@@ -136,7 +143,7 @@ Specyfing `-f, --font` will still be valid, but it will be ignored internally.
 | MacOS aarch64 | ✅               |                                               |
 | MacOS x86     | ✅               | Currently not all riscv isa tests are passing |
 | Ubuntu x86    | ✅               | Currently not all riscv isa tests are passing |
-| Windows       | Native CLI only | Currenly untested                             |
+| Windows x86   | Native CLI only | Currenly untested                             |
 | Emscripten    | ❌               | Planned future support                        |
 
 ## License

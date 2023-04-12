@@ -82,7 +82,11 @@ int main(int argc, char* argv[])
 #endif
     )
     {
+#if !NATIVE_CLI
         error_exit(argv, "both bios_path and font_path must be provided");
+#else
+        error_exit(argv, "bios_path must be provided");
+#endif
     }
 
     if (kernel_path != nullptr && dtb_path == nullptr)

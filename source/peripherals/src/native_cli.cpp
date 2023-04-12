@@ -12,6 +12,7 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
                      uint32_t height)
 {
     uart_data[cfg::lsr - uart_base_addr] |= cfg::lsr_tx;
+    thread_done = false;
 
 #if !CPU_TEST
     stdin_reader_thread = std::thread(&GpuDevice::stdin_reader, this);
@@ -89,7 +90,7 @@ void GpuDevice::stdin_reader()
         if (_kbhit())
         {
             char c = _getch();
-            read_char.store(c, std::memory_order::acquire);
+            read_char.store(c, std::memory_order::release);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
