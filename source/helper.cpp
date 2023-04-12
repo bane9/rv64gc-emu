@@ -118,10 +118,10 @@ uint64_t helper::write_bits(uint64_t value, uint64_t upper_offset, uint64_t lowe
     return value;
 }
 
-static const std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-
 uint64_t helper::get_milliseconds()
 {
+    static const auto start_time = std::chrono::high_resolution_clock::now();
+
     auto now = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 }

@@ -79,9 +79,9 @@ void ClintDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t len
 
 void ClintDevice::tick(Cpu& cpu)
 {
-    ++mtime;
+    mtime = helper::get_milliseconds() * 1000;
     cpu.cregs.store(csr::Address::TIME, mtime);
-    cpu.cregs.store(csr::Address::TIMEMS, helper::get_milliseconds());
+    // cpu.cregs.store(csr::Address::TIMEMS, helper::get_milliseconds());
 
     if ((msip & 1) != 0)
     {

@@ -81,7 +81,7 @@ struct Mask
 
     enum class SSTATUSBit : uint64_t
     {
-        SIE = 0,
+        SIE = 1,
         SPIE = 5,
         SPP = 8
     };

@@ -79,9 +79,11 @@ void Cpu::run()
 
 void Cpu::loop(std::ostream& debug_stream)
 {
-    uint32_t insn_size = _loop(debug_stream);
+    cregs.store(csr::Address::CYCLE, cregs.load(csr::Address::CYCLE) + 1);
 
     bus.tick_devices(*this);
+
+    uint32_t insn_size = _loop(debug_stream);
 
     interrupt::Interrupt::InterruptValue pending_interrupt =
         interrupt::get_pending_interrupt(*this);
@@ -101,8 +103,11 @@ void Cpu::loop(std::ostream& debug_stream)
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {
-        debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
-                                    exception::Exception::get_exception_str(exc_val), pc);
+        if constexpr (CPU_VERBOSE_DEBUG)
+        {
+            debug_stream << fmt::format("Exception: {}, happened at pc=0x{:0>8x}\n",
+                                        exception::Exception::get_exception_str(exc_val), pc);
+        }
 #if !CPU_TEST
         if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
             [[unlikely]]
@@ -141,8 +146,6 @@ uint32_t Cpu::_loop(std::ostream& debug_stream)
 {
     regs[reg_abi_name::zero] = 0;
 
-    cregs.store(csr::Address::CYCLE, cregs.load(csr::Address::CYCLE) + 1);
-
     if (sleep) [[unlikely]]
     {
         return 0;
@@ -159,7 +162,7 @@ uint32_t Cpu::_loop(std::ostream& debug_stream)
 
     if constexpr (CPU_VERBOSE_DEBUG)
     {
-        debug_stream << fmt::format("pc: 0x{:0>8x}\n", pc);
+        // debug_stream << fmt::format("pc: 0x{:0>8x}\n", pc);
         // decoder.dump(debug_stream);
         // debug_stream << "\n\n" << std::flush;
     }

@@ -172,7 +172,7 @@ void csr::mret(Cpu& cpu, Decoder decoder)
 void csr::wfi(Cpu& cpu, Decoder decoder)
 {
 #if !CPU_TEST
-    cpu.sleep = true;
+    // cpu.sleep = true;
 #endif
 }
 

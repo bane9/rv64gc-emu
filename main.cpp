@@ -99,10 +99,12 @@ int main(int argc, char* argv[])
         error_exit(argv, "bios path invalid");
     }
 
+#if !NATIVE_CLI
     if (!file_exists(font_path))
     {
         error_exit(argv, "font path invalid");
     }
+#endif
 
     auto bios = helper::load_file(bios_path);
     RamDevice dram = RamDevice(0x80000000U, SIZE_MIB(256) + sizeof(uint64_t), std::move(bios));
@@ -120,12 +122,10 @@ int main(int argc, char* argv[])
             error_exit(argv, "dtb path invalid");
         }
 
-        dtb_rom = new RamDevice(0x1000, 0xe000);
+        dtb_rom = new RamDevice(0x10000, 0xe000);
 
         dtb_rom->set_data(helper::load_file(dtb_path));
         cpu.regs[Cpu::reg_abi_name::a1] = dtb_rom->get_base_address();
-
-        cpu.bus.add_device(dtb_rom);
     }
 
     if (kernel_path)

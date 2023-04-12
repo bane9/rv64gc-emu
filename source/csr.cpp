@@ -54,22 +54,22 @@ void Csr::store(uint64_t address, uint64_t value)
 
 uint64_t Csr::read_bit(uint64_t address, uint64_t offset)
 {
-    return helper::read_bit(regs[address], offset);
+    return helper::read_bit(load(address), offset);
 }
 
 uint64_t Csr::read_bits(uint64_t address, uint64_t upper_offset, uint64_t lower_offset)
 {
-    return helper::read_bits(regs[address], upper_offset, lower_offset);
+    return helper::read_bits(load(address), upper_offset, lower_offset);
 }
 
 void Csr::write_bit(uint64_t address, uint64_t offset, uint64_t value)
 {
-    regs[address] = helper::write_bit(regs[address], offset, value);
+    store(address, helper::write_bit(load(address), offset, value));
 }
 
 void Csr::write_bits(uint64_t address, uint64_t upper_offset, uint64_t lower_offset, uint64_t value)
 {
-    regs[address] = helper::write_bits(regs[address], upper_offset, lower_offset, value);
+    store(address, helper::write_bits(load(address), upper_offset, lower_offset, value));
 }
 
 uint64_t Csr::read_bit_mstatus(Mask::MSTATUSBit bit)
