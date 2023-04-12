@@ -106,6 +106,39 @@ Linux buildroot configuration and a DOOM port can be found in the [rv64gc-emu-so
 - [fmtlib](https://github.com/fmtlib/fmt) - Included via CMake's FetchContent
 - [MesloLGS NF Regular font](https://github.com/romkatv/dotfiles-public/blob/master/.local/share/fonts/NerdFonts/MesloLGS%20NF%20Regular.ttf) - included as font.ttf in the root of this git
 
+## Native CLI option
+
+In the case you want to drop the libvterm, sdl2 and icu4c dependencies (and if you are on a platform that doesn't support them), you can compile the emulator with the "Native CLI" flag where it would only use the existing terminal emulator for communication.
+
+To do this, use this as the CMake build step:
+
+```bash
+cmake . -Bbuild/ -DCMAKE_BUILD_TYPE=Release -DNATIVE_CLI=1
+cmake --build build/
+```
+
+In this case, the only dependency that needs to be acquired trough a package manager is `cmake`, and the usage of the program will be the following:
+
+```bash
+Usage: ./rv64gc_emu [options]
+Options:
+  -b, --bios bios_path     Path to the BIOS file (mandatory)
+  -d, --dtb dtb_path       Path to the device tree blob file (optional, mandatory if kernel is present)
+  -k, --kernel kernel_path Path to the kernel file (optional)
+```
+
+Specyfing `-f, --font` will still be valid, but it will be ignored internally.
+
+## Supported platforms
+
+| Platform      | Supported       | Comments                                      |
+|---------------|-----------------|-----------------------------------------------|
+| MacOS aarch64 | ✅               |                                               |
+| MacOS x86     | ✅               | Currently not all riscv isa tests are passing |
+| Ubuntu x86    | ✅               | Currently not all riscv isa tests are passing |
+| Windows       | Native CLI only | Currenly untested                             |
+| Emscripten    | ❌               | Planned future support                        |
+
 ## License
 
 This repository is under GNU GPLv3 license.

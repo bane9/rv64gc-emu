@@ -43,8 +43,19 @@ set(SRC_FILES_COMMON
 set(SRC_FILES_MAIN
   ${SRC_FILES_COMMON}
   main.cpp
+)
+
+if (${NATIVE_CLI})
+set(SRC_FILES_MAIN
+  ${SRC_FILES_MAIN}
+  source/peripherals/src/native_cli.cpp
+)
+else()
+set(SRC_FILES_MAIN
+  ${SRC_FILES_MAIN}
   source/peripherals/src/gpu.cpp
 )
+endif()
 
 add_executable(rv64gc_emu "${SRC_FILES_MAIN}")
 
@@ -71,25 +82,33 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(fmt)
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_TTF REQUIRED)
+if (${NATIVE_CLI})
+  target_include_directories(rv64gc_emu PRIVATE ${INCLUDE_DIRS})
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(VTERM REQUIRED IMPORTED_TARGET vterm)
+  target_link_libraries(rv64gc_emu PRIVATE fmt::fmt)
 
-find_package(ICU REQUIRED COMPONENTS uc i18n)
+  add_compile_definitions(NATIVE_CLI=1)
+else()
+  find_package(SDL2 REQUIRED)
+  find_package(SDL2_TTF REQUIRED)
 
-set(ALL_INCLUDE_DIRS
-  ${INCLUDE_DIRS}
-  ${SDL2_INCLUDE_DIRS} 
-  ${VTERM_INCLUDE_DIRS} 
-  ${SDL2_TTF_INCLUDE_DIRS} 
-  ${ICU_INCLUDE_DIRS}
-)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(VTERM REQUIRED IMPORTED_TARGET vterm)
 
-target_include_directories(rv64gc_emu PRIVATE ${ALL_INCLUDE_DIRS})
+  find_package(ICU REQUIRED COMPONENTS uc i18n)
 
-target_link_libraries(rv64gc_emu PRIVATE fmt::fmt SDL2::SDL2 PkgConfig::VTERM SDL2_ttf ${ICU_LIBRARIES})
+  set(ALL_INCLUDE_DIRS
+    ${INCLUDE_DIRS}
+    ${SDL2_INCLUDE_DIRS} 
+    ${VTERM_INCLUDE_DIRS} 
+    ${SDL2_TTF_INCLUDE_DIRS} 
+    ${ICU_INCLUDE_DIRS}
+  )
+
+  target_include_directories(rv64gc_emu PRIVATE ${ALL_INCLUDE_DIRS})
+
+  target_link_libraries(rv64gc_emu PRIVATE fmt::fmt SDL2::SDL2 PkgConfig::VTERM SDL2_ttf ${ICU_LIBRARIES})
+endif()
 
 # Tests
 
@@ -98,6 +117,7 @@ enable_testing()
 set(SRC_FILES_TEST
   ${SRC_FILES_COMMON}
   tests/test_cpu.cpp
+  source/peripherals/src/native_cli.cpp
 )
 
 add_executable(test_cpu "${SRC_FILES_TEST}")
@@ -105,7 +125,7 @@ add_executable(test_cpu "${SRC_FILES_TEST}")
 set_property(TARGET test_cpu PROPERTY CXX_STANDARD 20)
 set_property(TARGET test_cpu PROPERTY C_STANDARD 17)
 
-target_include_directories(test_cpu PRIVATE ${ALL_INCLUDE_DIRS} tests/)
+target_include_directories(test_cpu PRIVATE ${INCLUDE_DIRS} tests/)
 target_link_libraries(test_cpu PRIVATE fmt::fmt)
 
 target_compile_definitions(test_cpu PRIVATE CPU_TEST=1 CPU_VERBOSE_DEBUG=1)

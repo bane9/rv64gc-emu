@@ -1,11 +1,18 @@
 #pragma once
 
 #include "bus.hpp"
-#include "terminal.hpp"
-#include <SDL2/SDL.h>
+#include "cpu_config.hpp"
 #include <memory>
 #include <ostream>
 #include <string_view>
+
+#if !NATIVE_CLI && !CPU_TEST
+#include "terminal.hpp"
+#include <SDL2/SDL.h>
+#else
+#include <atomic>
+#include <thread>
+#endif
 
 namespace gpu
 {
@@ -62,6 +69,7 @@ class GpuDevice : public BusDevice
 
     static constexpr std::string_view peripheral_name = "GPU";
 
+#if !NATIVE_CLI && !CPU_TEST
   public:
     void uart_putchar(uint8_t c);
     void render_textbuffer();
@@ -89,6 +97,13 @@ class GpuDevice : public BusDevice
 
     int term_rows = 32;
     int term_cols = 100;
+#else
+  public:
+    bool thread_done = false;
+    std::atomic<char> read_char;
+    void stdin_reader();
+    std::thread stdin_reader_thread;
+#endif
 
   public:
     bool is_uart_interrupting = false;

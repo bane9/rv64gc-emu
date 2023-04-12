@@ -17,7 +17,9 @@ void print_usage(char* argv[])
     std::cerr << fmt::format("Usage: {} [options]\n"
                              "Options:\n"
                              "  -b, --bios bios_path     Path to the BIOS file (mandatory)\n"
+#if !NATIVE_CLI
                              "  -f, --font font_path     Path to the font file (mandatory)\n"
+#endif
                              "  -d, --dtb dtb_path       Path to the device tree blob file "
                              "(optional, mandatory if kernel is present)\n"
                              "  -k, --kernel kernel_path Path to the kernel file (optional)\n",
@@ -74,7 +76,11 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (bios_path == nullptr || font_path == nullptr)
+    if (bios_path == nullptr
+#if !NATIVE_CLI
+        || font_path == nullptr
+#endif
+    )
     {
         error_exit(argv, "both bios_path and font_path must be provided");
     }
