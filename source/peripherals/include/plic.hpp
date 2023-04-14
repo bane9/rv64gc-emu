@@ -35,7 +35,7 @@ class PlicDevice : public BusDevice
     std::array<uint32_t, 2> claim = {};
 
   public:
-    static constexpr uint64_t base_addr = plic_base_addr;
+    static constexpr uint64_t base_addr = 0xC000000ULL;
 
     static constexpr uint64_t source_prio_addr = base_addr;
     static constexpr uint64_t source_prio_end_addr = base_addr + 0xfffULL;

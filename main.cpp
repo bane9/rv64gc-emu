@@ -107,13 +107,11 @@ int main(int argc, char* argv[])
 #endif
 
     auto bios = helper::load_file(bios_path);
-    RamDevice dram = RamDevice(0x80000000U, SIZE_MIB(256) + sizeof(uint64_t), std::move(bios));
+    RamDevice dram = RamDevice(0x80000000U, SIZE_MIB(64) + SIZE_KIB(64), std::move(bios));
 
-    Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address());
+    Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address() - SIZE_KIB(64));
 
     gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
-
-    RamDevice* dtb_rom = nullptr;
 
     if (dtb_path)
     {
@@ -122,10 +120,11 @@ int main(int argc, char* argv[])
             error_exit(argv, "dtb path invalid");
         }
 
-        dtb_rom = new RamDevice(0x10000, 0xe000);
+        std::vector<uint8_t> dtb = helper::load_file(dtb_path);
+        uint64_t dtb_offset = dram.data.size() - SIZE_KIB(64);
+        cpu.regs[Cpu::reg_abi_name::a1] = dram.get_base_address() + dtb_offset;
 
-        dtb_rom->set_data(helper::load_file(dtb_path));
-        cpu.regs[Cpu::reg_abi_name::a1] = dtb_rom->get_base_address();
+        memcpy(dram.data.data() + dtb_offset, dtb.data(), dtb.size());
     }
 
     if (kernel_path)
@@ -146,11 +145,6 @@ int main(int argc, char* argv[])
     cpu.bus.add_device(&gpu);
     cpu.bus.add_device(&clint);
     cpu.bus.add_device(&plic);
-
-    if (dtb_rom != nullptr)
-    {
-        cpu.bus.add_device(dtb_rom);
-    }
 
     cpu.run();
 }

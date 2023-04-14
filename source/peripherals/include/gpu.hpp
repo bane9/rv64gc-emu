@@ -20,6 +20,7 @@ namespace gpu
 namespace cfg
 {
 constexpr uint64_t uart_base_address = 0x10000000ULL;
+constexpr uint64_t uart_irqn = 10;
 
 constexpr uint64_t rhr = uart_base_address;
 constexpr uint64_t thr = uart_base_address;

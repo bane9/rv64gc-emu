@@ -29,7 +29,7 @@ class ClintDevice : public BusDevice
     uint32_t msip = 0;
 
   public:
-    static constexpr uint64_t base_addr = clint_base_addr;
+    static constexpr uint64_t base_addr = 0x2000000ULL;
 
     static constexpr uint64_t msip_addr = base_addr;
     static constexpr uint64_t mtimecmp_addr = base_addr + 0x4000ULL;

@@ -11,7 +11,6 @@ namespace gpu
 GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t width,
                      uint32_t height)
 {
-    uart_data[cfg::lsr - uart_base_addr] |= cfg::lsr_tx;
     thread_done = false;
 
 #if !CPU_TEST
@@ -32,21 +31,12 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
     if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
     {
-        if (length != 8)
+        if (address == cfg::lsr)
         {
-            return 0;
+            return 0x60;
         }
 
-        if (address == cfg::rhr)
-        {
-            uart_data[cfg::lsr - uart_base_addr] &= ~cfg::lsr_rx;
-
-            return uart_data[cfg::rhr - uart_base_addr];
-        }
-        else
-        {
-            return uart_data[address - uart_base_addr];
-        }
+        return uart_data[address - uart_base_addr];
     }
 
     return 0;
@@ -56,14 +46,12 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
 {
     if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
     {
+        uart_data[address - uart_base_addr] = value;
+
         if (address == cfg::thr)
         {
             char c = static_cast<char>(value);
             std::cout << c;
-        }
-        else
-        {
-            uart_data[address - uart_base_addr] = value;
         }
     }
 }
@@ -73,7 +61,7 @@ std::optional<uint32_t> GpuDevice::is_interrupting()
     if (is_uart_interrupting)
     {
         is_uart_interrupting = false;
-        return uart_irqn;
+        return cfg::uart_irqn;
     }
 
     return std::nullopt;
@@ -120,8 +108,7 @@ void GpuDevice::stdin_reader()
 
         if (select(STDIN_FILENO + 1, &read_fds, nullptr, nullptr, &timeout) > 0)
         {
-            char c;
-            std::cin >> c;
+            char c = getchar();
             read_char.store(c, std::memory_order::release);
         }
 

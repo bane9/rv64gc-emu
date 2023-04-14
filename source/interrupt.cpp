@@ -29,7 +29,7 @@ interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
         static_cast<gpu::GpuDevice*>(cpu.bus.find_bus_device(gpu::cfg::uart_base_address));
 
     static PlicDevice* plic_device =
-        static_cast<PlicDevice*>(cpu.bus.find_bus_device(plic_base_addr));
+        static_cast<PlicDevice*>(cpu.bus.find_bus_device(PlicDevice::base_addr));
 
     std::optional<uint32_t> irqn = gpu_device->is_interrupting();
 

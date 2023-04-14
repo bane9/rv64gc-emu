@@ -63,7 +63,8 @@ void Bus::tick_devices(Cpu& cpu)
     static gpu::GpuDevice* gpu_device =
         static_cast<gpu::GpuDevice*>(find_bus_device(gpu::cfg::uart_base_address));
 
-    static ClintDevice* clint_device = static_cast<ClintDevice*>(find_bus_device(clint_base_addr));
+    static ClintDevice* clint_device =
+        static_cast<ClintDevice*>(find_bus_device(ClintDevice::base_addr));
 
     gpu_device->tick(cpu);
     clint_device->tick(cpu);
