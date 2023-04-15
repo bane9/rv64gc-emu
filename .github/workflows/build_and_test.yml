@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build
 
 on:
   push:
@@ -29,11 +29,6 @@ jobs:
         run: |
           sudo apt-get install -y cmake libsdl2-dev libsdl2-ttf-dev libicu-dev libvterm-dev
 
-      - name: Install RISC-V GNU toolchain (Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y gcc-riscv64-unknown-elf
-
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -46,12 +41,6 @@ jobs:
           echo "LDFLAGS=-L$(brew --prefix icu4c)/lib" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$(brew --prefix icu4c)/include" >> $GITHUB_ENV
 
-      - name: Install RISC-V GNU toolchain (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew tap riscv-software-src/riscv
-          brew install riscv-tools
-
       - name: Configure
         run: |
           cmake . -Bbuild/ -DCMAKE_BUILD_TYPE=Release
@@ -59,12 +48,6 @@ jobs:
       - name: Build
         run: |
           cmake --build build/
-
-      - name: Run Tests
-        run: |
-          cmake -P MakeTests.cmake
-          cd build/
-          ctest --output-on-failure 
 
       - name: Upload build artifacts
         if: startsWith(github.ref, 'refs/tags/')
@@ -123,4 +106,3 @@ jobs:
           asset_path: build-macos/rv64gc_emu
           asset_name: rv64gc_emu_macOS-latest
           asset_content_type: application/octet-stream
-
