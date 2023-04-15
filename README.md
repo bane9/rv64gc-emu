@@ -1,6 +1,6 @@
 # rv64gc Emulator
 
-[![Build](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build_and_test.yml)
+[![Build](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml)
 
 RISCV emulator written in C++20
 
