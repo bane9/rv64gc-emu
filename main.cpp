@@ -5,6 +5,8 @@
 #include "helper.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
+#include <algorithm>
+#include <array>
 #include <cstring>
 #include <filesystem>
 #include <fmt/core.h>
@@ -14,16 +16,18 @@
 
 void print_usage(char* argv[])
 {
-    std::cerr << fmt::format("Usage: {} [options]\n"
-                             "Options:\n"
-                             "  -b, --bios bios_path     Path to the BIOS file (mandatory)\n"
+    std::cerr << fmt::format(
+        "Usage: {} [options]\n"
+        "Options:\n"
+        "  -b, --bios   Path to the BIOS file (mandatory)\n"
 #if !NATIVE_CLI
-                             "  -f, --font font_path     Path to the font file (mandatory)\n"
+        "  -f, --font   Path to the font file (mandatory)\n"
 #endif
-                             "  -d, --dtb dtb_path       Path to the device tree blob file "
-                             "(optional, mandatory if kernel is present)\n"
-                             "  -k, --kernel kernel_path Path to the kernel file (optional)\n",
-                             argv[0]);
+        "  -d, --dtb    Path to the device tree blob file (optional, "
+        "mandatory if kernel is present)\n"
+        "  -k, --kernel Path to the kernel file (optional)\n"
+        "  -m, --memory Emulator RAM buffer size in MiB (optional, default 64 MiB)\n",
+        argv[0]);
 }
 
 void error_exit(char* argv[], const std::string& error_message)
@@ -38,6 +42,27 @@ bool file_exists(const char* path)
     return std::filesystem::exists(path);
 }
 
+bool patch_dtb_ram_size(std::vector<uint8_t>& dtb_data, uint32_t ram_size)
+{
+    static constexpr std::array<uint8_t, sizeof(uint32_t)> search_pattern = {0x0b, 0xad, 0xc0,
+                                                                             0xde};
+
+    auto it =
+        std::search(dtb_data.begin(), dtb_data.end(), search_pattern.begin(), search_pattern.end());
+
+    if (it == dtb_data.end())
+    {
+        return false;
+    }
+
+    uint32_t ram_size_be = ((ram_size & 0xff000000U) >> 24U) | ((ram_size & 0x00ff0000U) >> 8U) |
+                           ((ram_size & 0x0000ff00U) << 8U) | ((ram_size & 0x000000ffU) << 24U);
+
+    memcpy(&*it, &ram_size_be, sizeof(ram_size_be));
+
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
     const char* bios_path = nullptr;
@@ -45,16 +70,23 @@ int main(int argc, char* argv[])
     const char* dtb_path = nullptr;
     const char* kernel_path = nullptr;
 
-    static constexpr option long_options[] = {{"bios", required_argument, nullptr, 'b'},
-                                              {"font", required_argument, nullptr, 'f'},
-                                              {"dtb", required_argument, nullptr, 'd'},
-                                              {"kernel", required_argument, nullptr, 'k'},
-                                              {nullptr, 0, nullptr, 0}};
+    uint64_t ram_size = SIZE_MIB(64);
+
+    // clang-format off
+    static constexpr option long_options[] = {
+        {"bios", required_argument, nullptr, 'b'},
+        {"font", required_argument, nullptr, 'f'},
+        {"dtb", required_argument, nullptr, 'd'},
+        {"kernel", required_argument, nullptr, 'k'},
+        {"memory", required_argument, nullptr, 'm'},
+        {}
+    };
+    // clang-format on
 
     int opt;
     int option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "b:f:d:k:", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "b:f:d:k:m:", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -69,6 +101,9 @@ int main(int argc, char* argv[])
             break;
         case 'k':
             kernel_path = optarg;
+            break;
+        case 'm':
+            ram_size = SIZE_MIB(atoi(optarg));
             break;
         default:
             print_usage(argv);
@@ -106,10 +141,17 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    auto bios = helper::load_file(bios_path);
-    RamDevice dram = RamDevice(0x80000000U, SIZE_MIB(64) + SIZE_KIB(64), std::move(bios));
+    uint64_t ram_size_total = ram_size;
 
-    Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address() - SIZE_KIB(64));
+    if (dtb_path != nullptr)
+    {
+        ram_size_total += SIZE_MIB(2);
+    }
+
+    auto bios = helper::load_file(bios_path);
+    RamDevice dram = RamDevice(0x80000000U, ram_size_total, std::move(bios));
+
+    Cpu cpu = Cpu(dram.get_base_address(), ram_size);
 
     gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
 
@@ -121,8 +163,14 @@ int main(int argc, char* argv[])
         }
 
         std::vector<uint8_t> dtb = helper::load_file(dtb_path);
-        uint64_t dtb_offset = dram.data.size() - SIZE_KIB(64);
+        uint64_t dtb_offset = dram.data.size() - SIZE_MIB(2);
         cpu.regs[Cpu::reg_abi_name::a1] = dram.get_base_address() + dtb_offset;
+
+        if (!patch_dtb_ram_size(dtb, ram_size_total))
+        {
+            std::cout << "Warning: couldn't find dtb memory size magic value (0x0badc0de),"
+                         "allocating 66MiB (64MiB system, 2MiB dtb)\n";
+        }
 
         memcpy(dram.data.data() + dtb_offset, dtb.data(), dtb.size());
     }

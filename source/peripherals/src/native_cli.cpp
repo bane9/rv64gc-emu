@@ -29,11 +29,11 @@ GpuDevice::~GpuDevice()
 
 uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
-    if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
+    if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
     {
         if (address == cfg::lsr)
         {
-            return 0x60;
+            return uart_data[address - uart_base_addr] | cfg::lsr_tx;
         }
 
         return uart_data[address - uart_base_addr];
@@ -44,14 +44,16 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 
 void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t length)
 {
-    if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
+    if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
     {
-        uart_data[address - uart_base_addr] = value;
-
         if (address == cfg::thr)
         {
             char c = static_cast<char>(value);
             std::cout << c;
+        }
+        else
+        {
+            uart_data[address - uart_base_addr] = value;
         }
     }
 }

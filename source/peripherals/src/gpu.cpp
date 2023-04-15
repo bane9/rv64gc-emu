@@ -190,7 +190,7 @@ std::optional<uint32_t> GpuDevice::is_interrupting()
     if (is_uart_interrupting)
     {
         is_uart_interrupting = false;
-        return uart_irqn;
+        return cfg::uart_irqn;
     }
 
     return std::nullopt;

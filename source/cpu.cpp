@@ -83,8 +83,6 @@ void Cpu::loop(std::ostream& debug_stream)
 
     bus.tick_devices(*this);
 
-    uint32_t insn_size = _loop(debug_stream);
-
     interrupt::Interrupt::InterruptValue pending_interrupt =
         interrupt::get_pending_interrupt(*this);
 
@@ -97,9 +95,9 @@ void Cpu::loop(std::ostream& debug_stream)
         }
 
         interrupt::process(*this, pending_interrupt);
-
-        return;
     }
+
+    uint32_t insn_size = _loop(debug_stream);
 
     if (exc_val != exception::Exception::None) [[unlikely]]
     {

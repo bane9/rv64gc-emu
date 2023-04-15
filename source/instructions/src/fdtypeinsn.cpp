@@ -634,32 +634,34 @@ template <typename T> static void fmvx(Cpu& cpu, Decoder decoder)
 
 static void set_exceptions(Cpu& cpu)
 {
-    if (std::fetestexcept(FE_DIVBYZERO))
+    int exceptions = std::fetestexcept(FE_ALL_EXCEPT);
+
+    if (exceptions & FE_DIVBYZERO)
     {
         cpu.cregs.set_fpu_exception(csr::FExcept::DivByZero);
     }
 
-    if (std::fetestexcept(FE_INEXACT))
+    if (exceptions & FE_INEXACT)
     {
         cpu.cregs.set_fpu_exception(csr::FExcept::Inexact);
     }
 
-    // if (std::fetestexcept(FE_INVALID))
+    // if (exceptions & FE_INVALID)
     // {
     //     cpu.cregs.set_fpu_exception(csr::FExcept::Invalid);
     // }
 
-    if (std::fetestexcept(FE_OVERFLOW))
+    if (exceptions & FE_OVERFLOW)
     {
         cpu.cregs.set_fpu_exception(csr::FExcept::Overflow);
     }
 
-    if (std::fetestexcept(FE_UNDERFLOW))
+    if (exceptions & FE_UNDERFLOW)
     {
         cpu.cregs.set_fpu_exception(csr::FExcept::Undeflow);
     }
 
-    if (std::fetestexcept(FE_ALL_EXCEPT))
+    if (exceptions)
     {
         std::feclearexcept(FE_ALL_EXCEPT);
     }

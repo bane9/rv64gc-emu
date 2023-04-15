@@ -25,7 +25,8 @@ RISCV emulator written in C++20
 - PLIC
 - CLINT
 - bios (firmware), kernel and dtb loading
-- Passes all [RISCV imafdcsu isa tests](https://github.com/riscv-software-src/riscv-tests) (at least on M2, on x86_64 they are failing)
+- Successfully completes all [RISCV imafdcsu ISA tests](https://github.com/riscv-software-src/riscv-tests), with some caveats:
+  - The RISCV F and D extensions use standardized FPU exceptions. This implementation depends on native FPU exceptions through the `fetestexcept` function to set the emulator's FPU exceptions. While this approach yields the expected results on M2 Mac devices, it doesn't produce the anticipated outcomes for the `FE_INEXACT` exception on other platforms. As a result, F and D ISA tests are disabled on Github Actions runs.
 
 ## Building
 
@@ -64,10 +65,11 @@ The executable will be in the `build/rv64gc_emu`
 ```bash
 Usage: ./rv64gc_emu [options]
 Options:
-  -b, --bios bios_path     Path to the BIOS file (mandatory)
-  -f, --font font_path     Path to the font file (mandatory)
-  -d, --dtb dtb_path       Path to the device tree blob file (optional, mandatory if kernel is present)
-  -k, --kernel kernel_path Path to the kernel file (optional)
+  -b, --bios   Path to the BIOS file (mandatory)
+  -f, --font   Path to the font file (mandatory)
+  -d, --dtb    Path to the device tree blob file (optional, mandatory if kernel is present)
+  -k, --kernel Path to the kernel file (optional)
+  -m, --memory Emulator RAM buffer size in MiB (optional, default 66 MiB)
 ```
 
 `bios` option is meant either for bare-metal firmware, or for a linux bootloader (e.g OpenSBI, BBL)
@@ -75,6 +77,19 @@ Options:
 `font` will be used by the SDL window in text mode
 
 `dtb` and `kernel` will be used to boot Linux
+
+`memory` determines the amount of RAM the emulator should allocate. If the dtb argument is used, an additional 2MiB will be allocated, and the dtb will be stored in the top 2MiB.
+
+When a dtb is specified, the memory size register is expected to have the magic value `0x0badc0de`. For instance, the anticipated memory definitions in the DTS should appear as follows:
+
+```dts
+memory@80000000 {
+  device_type = "memory";
+  reg = <0x0 0x80000000 0x0 0x0badc0de>;
+};
+```
+
+This magic value will be replaced either with the default RAM size value (66MiB) or with the specified memory size provided using the `--memory` argument. If the magic value is not present, ensure that you provide a memory size through the `--memory ` argument that is equal to or larger than the size specified in the DTS.
 
 ## Testing
 
@@ -129,22 +144,25 @@ In this case, the only dependency that needs to be acquired trough a package man
 ```bash
 Usage: ./rv64gc_emu [options]
 Options:
-  -b, --bios bios_path     Path to the BIOS file (mandatory)
-  -d, --dtb dtb_path       Path to the device tree blob file (optional, mandatory if kernel is present)
-  -k, --kernel kernel_path Path to the kernel file (optional)
+  -b, --bios   Path to the BIOS file (mandatory)
+  -d, --dtb    Path to the device tree blob file (optional, mandatory if kernel is present)
+  -k, --kernel Path to the kernel file (optional)
+  -m, --memory Emulator RAM buffer size in MiB (optional, default 64 MiB)
 ```
 
 Specyfing `-f, --font` will still be valid, but it will be ignored internally.
 
 ## Supported platforms
 
-| Platform      | Supported       | Comments                                      |
-|---------------|-----------------|-----------------------------------------------|
-| MacOS aarch64 | ✅               |                                               |
-| MacOS x86     | ✅               | Currently not all riscv isa tests are passing |
-| Ubuntu x86    | ✅               | Currently not all riscv isa tests are passing |
-| Windows x86   | Native CLI only | Currenly untested                             |
-| Emscripten    | ❌               | Planned future support                        |
+| Platform        | Supported        | Comments                                      |
+|-----------------|------------------|-----------------------------------------------|
+| MacOS aarch64   | ✅               |                                               |
+| MacOS x86       | ✅               |                                               |
+| Ubuntu x86      | ✅               |                                               |
+| Ubuntu aarch64  | ✅               |                                               |
+| Windows x86     | Native CLI only  | Currenly untested                             |
+| Windows aarch64 | Native CLI only  | Currenly untested                             |
+| Emscripten      | ❌               | Planned future support                        |
 
 ## License
 

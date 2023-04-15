@@ -81,20 +81,19 @@ void ClintDevice::tick(Cpu& cpu)
 {
     mtime = helper::get_milliseconds() * 1000;
     cpu.cregs.store(csr::Address::TIME, mtime);
-    // cpu.cregs.store(csr::Address::TIMEMS, helper::get_milliseconds());
 
-    if ((msip & 1) != 0)
+    if (msip & 1)
     {
-        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::MSIP);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP, 1);
     }
 
     if (mtime >= mtimecmp)
     {
-        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::MTIP);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP, 1);
     }
     else
     {
-        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) & ~csr::Mask::MTIP);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP, 0);
     }
 }
 

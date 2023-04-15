@@ -86,11 +86,6 @@ interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
 
 void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 {
-    if (int_val == Interrupt::None)
-    {
-        return;
-    }
-
     cpu.sleep = false;
 
     uint64_t pc = cpu.pc;
