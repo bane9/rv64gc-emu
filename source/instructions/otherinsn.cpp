@@ -31,7 +31,7 @@ void jalr::jalr(Cpu& cpu, Decoder decoder)
 void auipc::auipc(Cpu& cpu, Decoder decoder)
 {
     Cpu::reg_name rd = decoder.rd();
-    int64_t imm = SIGNEXTEND_CAST(decoder.insn & 0xfffff000, int32_t);
+    int64_t imm = SIGNEXTEND_CAST(decoder.insn & 0xfffff000U, int32_t);
 
     cpu.regs[rd] = cpu.pc + imm;
 }
@@ -40,5 +40,5 @@ void lui::lui(Cpu& cpu, Decoder decoder)
 {
     Cpu::reg_name rd = decoder.rd();
 
-    cpu.regs[rd] = SIGNEXTEND_CAST(decoder.insn & 0xfffff000, int32_t);
+    cpu.regs[rd] = SIGNEXTEND_CAST(decoder.insn & 0xfffff000U, int32_t);
 }

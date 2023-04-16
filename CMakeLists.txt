@@ -30,22 +30,22 @@ set(SRC_FILES_COMMON
   source/mmu.cpp
   source/misc.cpp
   
-  source/peripherals/src/clint.cpp
-  source/peripherals/src/plic.cpp
-  source/peripherals/src/ram.cpp
+  source/peripherals/clint.cpp
+  source/peripherals/plic.cpp
+  source/peripherals/ram.cpp
   
-  source/instructions/src/loadinsn.cpp
-  source/instructions/src/otherinsn.cpp
-  source/instructions/src/itypeinsn.cpp
-  source/instructions/src/btypeinsn.cpp
-  source/instructions/src/i64insn.cpp
-  source/instructions/src/r64insn.cpp
-  source/instructions/src/rtypeinsn.cpp
-  source/instructions/src/stypeinsn.cpp
-  source/instructions/src/csrtypeinsn.cpp
-  source/instructions/src/atomictype.cpp
-  source/instructions/src/fdtypeinsn.cpp
-  source/instructions/src/ctypeinsn.cpp
+  source/instructions/loadinsn.cpp
+  source/instructions/otherinsn.cpp
+  source/instructions/itypeinsn.cpp
+  source/instructions/btypeinsn.cpp
+  source/instructions/i64insn.cpp
+  source/instructions/r64insn.cpp
+  source/instructions/rtypeinsn.cpp
+  source/instructions/stypeinsn.cpp
+  source/instructions/csrtypeinsn.cpp
+  source/instructions/atomictype.cpp
+  source/instructions/fdtypeinsn.cpp
+  source/instructions/ctypeinsn.cpp
 )
 
 set(SRC_FILES_MAIN
@@ -56,12 +56,12 @@ set(SRC_FILES_MAIN
 if (${NATIVE_CLI})
 set(SRC_FILES_MAIN
   ${SRC_FILES_MAIN}
-  source/peripherals/src/native_cli.cpp
+  source/peripherals/native_cli.cpp
 )
 else()
 set(SRC_FILES_MAIN
   ${SRC_FILES_MAIN}
-  source/peripherals/src/gpu.cpp
+  source/peripherals/gpu.cpp
 )
 endif()
 
@@ -131,7 +131,7 @@ enable_testing()
 set(SRC_FILES_TEST
   ${SRC_FILES_COMMON}
   tests/test_cpu.cpp
-  source/peripherals/src/native_cli.cpp
+  source/peripherals/native_cli.cpp
 )
 
 add_executable(test_cpu "${SRC_FILES_TEST}")
