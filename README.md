@@ -26,8 +26,7 @@ RISCV emulator written in C++20
 - PLIC
 - CLINT
 - bios (firmware), kernel and dtb loading
-- Successfully completes all [RISCV imafdcsu ISA tests](https://github.com/riscv-software-src/riscv-tests), with some caveats:
-  - The RISCV F and D extensions use standardized FPU exceptions. This implementation depends on native FPU exceptions through the `fetestexcept` function to set the emulator's FPU exceptions. While this approach yields the expected results on M2 Mac devices, it doesn't produce the anticipated outcomes for the `FE_INEXACT` exception on other platforms. As a result, F and D ISA tests may not pass on your platform.
+- Successfully completes all [RISCV imafdcsu ISA tests](https://github.com/riscv-software-src/riscv-tests), with some caveats (see [Testing](#testing))
 
 ## Building
 
@@ -115,6 +114,8 @@ Then, run these command from the root of this git:
 cmake -P MakeTests.cmake
 ctest --test-dir build/ --output-on-failure
 ```
+
+Note: The RISCV F and D extensions use standardized FPU exceptions. This implementation depends on native FPU exceptions through the `fetestexcept` function to set the emulator's FPU exceptions. While this approach yields the expected results on M2 Mac devices, it doesn't produce the anticipated outcomes for the `FE_INEXACT` exception on other platforms. As a result, F and D ISA tests may not pass on your platform.
 
 ## Native CLI option
 
