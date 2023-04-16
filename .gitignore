@@ -30,3 +30,4 @@ images/
 Image
 *.dts
 *.dtb
+build-emscripten/

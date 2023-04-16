@@ -634,6 +634,7 @@ template <typename T> static void fmvx(Cpu& cpu, Decoder decoder)
 
 static void set_exceptions(Cpu& cpu)
 {
+#if !__EMSCRIPTEN__
     int exceptions = std::fetestexcept(FE_ALL_EXCEPT);
 
     if (exceptions & FE_DIVBYZERO)
@@ -665,6 +666,7 @@ static void set_exceptions(Cpu& cpu)
     {
         std::feclearexcept(FE_ALL_EXCEPT);
     }
+#endif
 }
 
 bool check_fs(Cpu& cpu)

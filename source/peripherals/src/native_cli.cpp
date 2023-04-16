@@ -8,22 +8,37 @@
 namespace gpu
 {
 
+#if __EMSCRIPTEN__
+void* emscripten_thread(void* arg)
+{
+    GpuDevice* device = static_cast<GpuDevice*>(arg);
+
+    device->stdin_reader();
+
+    return nullptr;
+}
+#endif
+
 GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t width,
                      uint32_t height)
 {
     thread_done = false;
 
-#if !CPU_TEST
+#if !CPU_TEST && !__EMSCRIPTEN__
     stdin_reader_thread = std::thread(&GpuDevice::stdin_reader, this);
+#elif __EMSCRIPTEN__
+    // pthread_create(&thread, nullptr, emscripten_thread, this);
 #endif
 }
 
 GpuDevice::~GpuDevice()
 {
-#if !CPU_TEST
     thread_done = true;
 
+#if !CPU_TEST && !__EMSCRIPTEN__
     stdin_reader_thread.join();
+#elif __EMSCRIPTEN__
+    pthread_join(thread, nullptr);
 #endif
 }
 

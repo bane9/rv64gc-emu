@@ -103,7 +103,11 @@ class GpuDevice : public BusDevice
     bool thread_done = false;
     std::atomic<char> read_char;
     void stdin_reader();
+#if __EMSCRIPTEN__
+    pthread_t thread;
+#else
     std::thread stdin_reader_thread;
+#endif
 #endif
 
   public:

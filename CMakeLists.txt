@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(rv64gc_emu)
 
+if (USE_EMSCRIPTEN)
+  if (NOT DEFINED EM_LOAD_PATH)
+    message(ERROR "You must specify -DEM_LOAD_PATH as an argument. Please refer to the Emscripten instructions in Readme")
+  endif()
+
+  set(NATIVE_CLI 1)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(FetchContent)
@@ -61,6 +69,12 @@ add_executable(rv64gc_emu "${SRC_FILES_MAIN}")
 
 set_property(TARGET rv64gc_emu PROPERTY CXX_STANDARD 20)
 set_property(TARGET rv64gc_emu PROPERTY C_STANDARD 17)
+
+if (USE_EMSCRIPTEN)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -matomics -mbulk-memory")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -matomics -mbulk-memory")
+  set_target_properties(rv64gc_emu PROPERTIES LINK_FLAGS "--preload-file ${EM_LOAD_PATH} -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=4")
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(OPTIMIZATION_FLAG "-O0")
