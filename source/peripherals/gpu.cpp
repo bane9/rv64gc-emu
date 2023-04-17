@@ -37,7 +37,8 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
 
     terminal = std::make_unique<Terminal>(term_rows, term_cols, font);
 
-    uart_data[cfg::lsr - uart_base_addr] |= cfg::lsr_tx;
+    lsr = cfg::lsr_temt | cfg::lsr_thre;
+    isr = 0xc0 | cfg::isr_no_int;
 }
 
 GpuDevice::~GpuDevice()
@@ -79,20 +80,33 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
         }
         else if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
         {
-            if (length != 8)
+            switch (address)
             {
-                return 0;
-            }
+            case cfg::thr: {
+                if (lsr & cfg::lsr_dr)
+                {
+                    lsr &= ~cfg::lsr_dr;
+                    dispatch_interrupt();
+                }
 
-            if (address == cfg::rhr)
-            {
-                uart_data[cfg::lsr - uart_base_addr] &= ~cfg::lsr_rx;
-
-                return uart_data[cfg::rhr - uart_base_addr];
+                return val;
             }
-            else
-            {
-                return uart_data[address - uart_base_addr];
+            case cfg::ier:
+                return ier;
+            case cfg::isr:
+                return isr;
+            case cfg::lcr:
+                return lcr;
+            case cfg::mcr:
+                return mcr;
+            case cfg::lsr:
+                return lsr;
+            case cfg::msr:
+                return msr;
+            case cfg::scr:
+                return scr;
+            default:
+                break;
             }
         }
     }
@@ -164,8 +178,9 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
         }
         else if (helper::value_in_range(address, uart_base_addr, uart_base_addr + uart_size))
         {
-            if (address == cfg::thr)
+            switch (address)
             {
+            case cfg::thr: {
                 char c = static_cast<char>(value);
                 terminal->input_write(&c, sizeof(c));
                 text_last_bufferred = helper::get_milliseconds();
@@ -176,10 +191,27 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
                     terminal->input_write(&c, sizeof(c));
                     render_textbuffer();
                 }
+
+                break;
             }
-            else
-            {
-                uart_data[address - uart_base_addr] = value;
+            case cfg::ier:
+                ier = value;
+                dispatch_interrupt();
+                break;
+            case cfg::fcr:
+                fcr = value;
+                break;
+            case cfg::lcr:
+                lcr = value;
+                break;
+            case cfg::mcr:
+                mcr = value;
+                break;
+            case cfg::scr:
+                scr = value;
+                break;
+            default:
+                break;
             }
         }
     }
@@ -198,9 +230,25 @@ std::optional<uint32_t> GpuDevice::is_interrupting()
 
 void GpuDevice::uart_putchar(uint8_t c)
 {
-    uart_data[0] = c;
-    uart_data[cfg::lsr - uart_base_addr] |= cfg::lsr_rx;
-    is_uart_interrupting = true;
+    val = c;
+    lsr |= cfg::lsr_dr;
+    dispatch_interrupt();
+}
+
+void GpuDevice::dispatch_interrupt()
+{
+    isr |= 0xc0;
+
+    if ((ier & cfg::ier_rdi) && (lsr & cfg::lsr_dr))
+    {
+        is_uart_interrupting = true;
+        return;
+    }
+    else if ((ier & cfg::ier_thri) && (lsr & cfg::lsr_temt))
+    {
+        is_uart_interrupting = true;
+        return;
+    }
 }
 
 void GpuDevice::tick(Cpu& cpu)
@@ -229,8 +277,7 @@ void GpuDevice::tick(Cpu& cpu)
                 }
                 break;
             case SDL_KEYUP:
-                uart_data[0] = 0;
-                uart_data[cfg::lsr - uart_base_addr] &= ~cfg::lsr_rx;
+                val = 0;
                 break;
             default:
                 break;

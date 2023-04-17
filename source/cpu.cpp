@@ -156,12 +156,11 @@ uint32_t Cpu::_loop(std::ostream& debug_stream)
 
     Decoder decoder = Decoder(insn);
 
-    if constexpr (CPU_VERBOSE_DEBUG)
-    {
-        // debug_stream << fmt::format("pc: 0x{:0>8x}\n", pc);
-        // decoder.dump(debug_stream);
-        // debug_stream << "\n\n" << std::flush;
-    }
+#if CPU_TEST
+    debug_stream << fmt::format("pc: 0x{:0>8x}\n", pc);
+    decoder.dump(debug_stream);
+    debug_stream << "\n\n" << std::flush;
+#endif
 
     if (insn == 0) [[unlikely]]
     {

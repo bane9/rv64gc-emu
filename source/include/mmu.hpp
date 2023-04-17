@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bus.hpp"
+#include "common_def.hpp"
 #include <array>
 #include <cstdint>
 
@@ -10,6 +11,23 @@ namespace mmu
 {
 
 constexpr uint64_t page_size = 4096;
+
+using pn_arr_t = std::array<uint64_t, 5>;
+
+struct TLBEntry
+{
+    pn_arr_t vpn;
+    pn_arr_t ppn;
+    uint64_t pte;
+    int64_t i;
+    uint64_t a;
+    uint64_t addr;
+    uint64_t age;
+    bool dirty;
+    bool accessed;
+};
+
+constexpr uint64_t tlb_entries = 2;
 
 struct Mode
 {
@@ -56,15 +74,20 @@ class Mmu
 
   public:
     void update();
+    bool fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, int tlb_index);
+    TLBEntry* get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode);
     uint64_t translate(uint64_t address, AccessType acces_type);
 
   public:
     uint32_t get_levels();
-    std::array<uint64_t, 5> get_vpn(uint64_t address);
-    std::array<uint64_t, 5> get_ppn(uint64_t pte);
+    pn_arr_t get_vpn(uint64_t address);
+    pn_arr_t get_ppn(uint64_t pte);
 
   public:
     void set_cpu_error(uint64_t address, AccessType access_type);
+
+  public:
+    std::array<TLBEntry, tlb_entries> tlb_cache = {};
 
   public:
     Mode::ModeValue mode;

@@ -24,10 +24,13 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
 {
     thread_done = false;
 
+    lsr = cfg::lsr_temt | cfg::lsr_thre;
+    isr = 0xc0 | cfg::isr_no_int;
+
 #if !CPU_TEST && !__EMSCRIPTEN__
     stdin_reader_thread = std::thread(&GpuDevice::stdin_reader, this);
 #elif __EMSCRIPTEN__
-    // pthread_create(&thread, nullptr, emscripten_thread, this);
+    pthread_create(&thread, nullptr, emscripten_thread, this);
 #endif
 }
 
@@ -36,9 +39,9 @@ GpuDevice::~GpuDevice()
     thread_done = true;
 
 #if !CPU_TEST && !__EMSCRIPTEN__
-    stdin_reader_thread.join();
+    // stdin_reader_thread.join();
 #elif __EMSCRIPTEN__
-    pthread_join(thread, nullptr);
+    // pthread_join(thread, nullptr);
 #endif
 }
 
@@ -46,12 +49,34 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
     if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
     {
-        if (address == cfg::lsr)
+        switch (address)
         {
-            return uart_data[address - uart_base_addr] | cfg::lsr_tx;
-        }
+        case cfg::thr: {
+            if (lsr & cfg::lsr_dr)
+            {
+                lsr &= ~cfg::lsr_dr;
+                dispatch_interrupt();
+            }
 
-        return uart_data[address - uart_base_addr];
+            return val;
+        }
+        case cfg::ier:
+            return ier;
+        case cfg::isr:
+            return isr;
+        case cfg::lcr:
+            return lcr;
+        case cfg::mcr:
+            return mcr;
+        case cfg::lsr:
+            return lsr;
+        case cfg::msr:
+            return msr;
+        case cfg::scr:
+            return scr;
+        default:
+            break;
+        }
     }
 
     return 0;
@@ -61,14 +86,31 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
 {
     if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
     {
-        if (address == cfg::thr)
+        switch (address)
         {
+        case cfg::thr: {
             char c = static_cast<char>(value);
             std::cout << c;
+            break;
         }
-        else
-        {
-            uart_data[address - uart_base_addr] = value;
+        case cfg::ier:
+            ier = value;
+            dispatch_interrupt();
+            break;
+        case cfg::fcr:
+            fcr = value;
+            break;
+        case cfg::lcr:
+            lcr = value;
+            break;
+        case cfg::mcr:
+            mcr = value;
+            break;
+        case cfg::scr:
+            scr = value;
+            break;
+        default:
+            break;
         }
     }
 }
@@ -84,58 +126,32 @@ std::optional<uint32_t> GpuDevice::is_interrupting()
     return std::nullopt;
 }
 
-#ifdef _WIN32
-
-#include <windows.h>
-
 void GpuDevice::stdin_reader()
 {
     while (!thread_done)
     {
-        if (_kbhit())
-        {
-            char c = _getch();
-            read_char.store(c, std::memory_order::release);
-        }
+        char c;
+        std::cin >> c;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        read_char.store(c, std::memory_order::release);
     }
 }
 
-#else // POSIX
-
-#include <sys/select.h>
-#include <termios.h>
-#include <unistd.h>
-
-void GpuDevice::stdin_reader()
+void GpuDevice::dispatch_interrupt()
 {
-    termios original_term, new_term;
-    tcgetattr(STDIN_FILENO, &original_term);
-    new_term = original_term;
-    new_term.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &new_term);
+    isr |= 0xc0;
 
-    while (!thread_done)
+    if ((ier & cfg::ier_rdi) && (lsr & cfg::lsr_dr))
     {
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(STDIN_FILENO, &read_fds);
-        timeval timeout = {0, 10000}; // 10 ms
-
-        if (select(STDIN_FILENO + 1, &read_fds, nullptr, nullptr, &timeout) > 0)
-        {
-            char c = getchar();
-            read_char.store(c, std::memory_order::release);
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        is_uart_interrupting = true;
+        return;
     }
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &original_term);
+    else if ((ier & cfg::ier_thri) && (lsr & cfg::lsr_temt))
+    {
+        is_uart_interrupting = true;
+        return;
+    }
 }
-
-#endif
 
 void GpuDevice::tick(Cpu& cpu)
 {
@@ -143,9 +159,9 @@ void GpuDevice::tick(Cpu& cpu)
 
     if (c != '\0')
     {
-        uart_data[0] = c;
-        uart_data[cfg::lsr - uart_base_addr] |= cfg::lsr_rx;
-        is_uart_interrupting = true;
+        val = c;
+        lsr |= cfg::lsr_dr;
+        dispatch_interrupt();
     }
 }
 

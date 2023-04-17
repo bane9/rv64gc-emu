@@ -182,6 +182,8 @@ void csr::sfencevma(Cpu& cpu, Decoder decoder)
     {
         cpu.set_exception(exception::Exception::IllegalInstruction, decoder.insn);
     }
+
+    cpu.mmu.update();
 }
 
 void csr::hfencevma(Cpu& cpu, Decoder decoder)

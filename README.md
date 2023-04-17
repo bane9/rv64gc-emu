@@ -29,7 +29,7 @@ Welcome to the RV64GC Emulator repository, a RISC-V emulator project developed u
 
 ## Building
 
-First, recursively pull this repo 
+First, recursively clone this repo 
 
 ```bash
 git clone --recurse-submodules https://github.com/bane9/rv64gc-emu.git

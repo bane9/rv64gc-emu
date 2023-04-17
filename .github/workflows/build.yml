@@ -94,7 +94,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
           asset_path: build-ubuntu/rv64gc_emu
-          asset_name: rv64gc_emu_ubuntu-latest
+          asset_name: rv64gc_emu_ubuntu
           asset_content_type: application/octet-stream
 
       - name: Upload Release Asset (macOS)
@@ -104,5 +104,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
           asset_path: build-macos/rv64gc_emu
-          asset_name: rv64gc_emu_macOS-latest
+          asset_name: rv64gc_emu_macOS
           asset_content_type: application/octet-stream

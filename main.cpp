@@ -153,11 +153,6 @@ int main(int argc, char* argv[])
 
     Cpu cpu;
 
-    cpu.pc = dram.get_base_address();
-    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_base_address() + ram_size;
-
-    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
-
     if (dtb_path)
     {
         if (!file_exists(dtb_path))
@@ -188,6 +183,11 @@ int main(int argc, char* argv[])
         std::vector<uint8_t> kernel = helper::load_file(kernel_path);
         memcpy(dram.data.data() + 0x200000U, kernel.data(), kernel.size());
     }
+
+    cpu.pc = dram.get_base_address();
+    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_base_address() + ram_size;
+
+    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
 
     ClintDevice clint;
     PlicDevice plic;

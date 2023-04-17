@@ -4,6 +4,7 @@
 #include "cpu_config.hpp"
 #include <memory>
 #include <ostream>
+#include <queue>
 #include <string_view>
 
 #if !NATIVE_CLI && !CPU_TEST
@@ -22,12 +23,35 @@ namespace cfg
 constexpr uint64_t uart_base_address = 0x10000000ULL;
 constexpr uint64_t uart_irqn = 10;
 
-constexpr uint64_t rhr = uart_base_address;
-constexpr uint64_t thr = uart_base_address;
+constexpr uint64_t rhr = uart_base_address + 0;
+constexpr uint64_t thr = uart_base_address + 0;
+constexpr uint64_t dll = uart_base_address + 0;
 
-constexpr uint64_t lsr = uart_base_address + 0x5;
-constexpr uint64_t lsr_rx = 1;
-constexpr uint64_t lsr_tx = 1 << 5;
+constexpr uint64_t ier = uart_base_address + 1;
+constexpr uint64_t dlm = uart_base_address + 1;
+
+constexpr uint64_t isr = uart_base_address + 2;
+constexpr uint64_t fcr = uart_base_address + 2;
+
+constexpr uint64_t lcr = uart_base_address + 3;
+constexpr uint64_t mcr = uart_base_address + 4;
+constexpr uint64_t lsr = uart_base_address + 5;
+constexpr uint64_t msr = uart_base_address + 6;
+constexpr uint64_t scr = uart_base_address + 7;
+
+constexpr uint8_t lsr_dr = 0x1;
+constexpr uint8_t lsr_thre = 0x20;
+constexpr uint8_t lsr_temt = 0x40;
+
+constexpr uint8_t ier_rdi = 0x01;
+constexpr uint8_t ier_thri = 0x02;
+
+constexpr uint8_t lcr_dlab = 0x80;
+
+constexpr uint8_t isr_no_int = 0x01;
+constexpr uint8_t isr_thri = 0x02;
+constexpr uint8_t isr_rdi = 0x04;
+
 }; // namespace cfg
 
 class GpuDevice : public BusDevice
@@ -111,9 +135,20 @@ class GpuDevice : public BusDevice
 #endif
 
   public:
+    void dispatch_interrupt();
     bool is_uart_interrupting = false;
 
   public:
-    std::unique_ptr<uint8_t[]> uart_data = std::make_unique<uint8_t[]>(uart_size);
+    uint8_t dll = 0;
+    uint8_t dlm = 0;
+    uint8_t isr = 0;
+    uint8_t ier = 0;
+    uint8_t fcr = 0;
+    uint8_t lcr = 0;
+    uint8_t mcr = 0;
+    uint8_t lsr = 0;
+    uint8_t msr = 0;
+    uint8_t scr = 0;
+    uint8_t val = 0;
 };
 } // namespace gpu
