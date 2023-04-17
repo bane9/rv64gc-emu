@@ -14,10 +14,11 @@
 
 #if USE_TLB && !defined(TLB_COMPLIANT)
 // Performance slightly better when disabled.
-// When disabled, the dirty bit will only be set if the PTE is not
-// available in the TLB cache and a store access is being performed.
-// If the PTE is cached before the store operation occurs,
-// the dirty bit will not be set.
+// When disabled, MMU safety checks will only be performed
+// only at the time the page is being fetched, but not if
+// it's already cached. As a result, unpredictable behavior
+// may occur with invalid page tables,
+// and it presents a security risk.
 #define TLB_COMPLIANT 1
 #else
 #define TLB_COMPLIANT 0

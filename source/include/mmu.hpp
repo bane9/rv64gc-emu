@@ -25,6 +25,11 @@ struct TLBEntry
     uint64_t age;
     bool dirty;
     bool accessed;
+    bool valid;
+    bool read;
+    bool write;
+    bool execute;
+    bool user;
 };
 
 constexpr uint64_t tlb_entries = 2;
