@@ -20,7 +20,7 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
-    SDL_ShowCursor(SDL_DISABLE);
+    // SDL_ShowCursor(SDL_DISABLE);
 
     font = TTF_OpenFont(font_path, 48);
 

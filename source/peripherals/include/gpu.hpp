@@ -97,7 +97,7 @@ class GpuDevice : public BusDevice
     TTF_Font* font;
 
     int term_rows = 32;
-    int term_cols = 100;
+    int term_cols = 120;
 #else
   public:
     bool thread_done = false;

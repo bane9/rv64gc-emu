@@ -16,7 +16,7 @@ class Decoder;
 class Cpu
 {
   public:
-    Cpu(uint64_t dram_begin, uint64_t dram_end);
+    Cpu();
 
     void dump_registers(std::ostream& stream);
 

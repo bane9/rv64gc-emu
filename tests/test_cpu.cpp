@@ -17,7 +17,6 @@
 #include <string_view>
 #include <utility>
 
-// Note: Only tested on OSX
 #if __APPLE__
 
 #include <sys/sysctl.h>
@@ -109,7 +108,10 @@ bool test_binary(const std::filesystem::directory_entry& binary_path)
     RamDevice dram =
         RamDevice(0x80000000U, SIZE_KIB(64), helper::load_file(binary_path.path().c_str()));
 
-    Cpu cpu = Cpu(dram.get_base_address(), dram.get_end_address());
+    Cpu cpu;
+
+    cpu.pc = dram.get_base_address();
+    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_end_address();
 
     ClintDevice clint;
     PlicDevice plic;

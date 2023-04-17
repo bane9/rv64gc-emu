@@ -24,10 +24,8 @@
 #include <sstream>
 #include <utility>
 
-Cpu::Cpu(uint64_t dram_begin, uint64_t dram_end) : mmu(*this)
+Cpu::Cpu() : mmu(*this)
 {
-    pc = dram_begin;
-    regs[reg_abi_name::sp] = dram_end - sizeof(uint64_t);
     mode = cpu::Mode::Machine;
 
     csr::init_handler_array();

@@ -1,8 +1,8 @@
-# rv64gc Emulator
+# RV64GC Emulator: A RISC-V Emulator developed in C++20
 
-[![Build](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml)
+[![Build Status](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml)
 
-RISCV emulator written in C++20
+Welcome to the RV64GC Emulator repository, a RISC-V emulator project developed using C++20, striving for high performance and comprehensive feature support. This emulator not only delivers a robust set of features but also provides Linux buildroot configuration and a port of DOOM, which can be found in the [rv64gc-emu-software](https://github.com/bane9/rv64gc-emu-software) repository.
 
 ## Table of Contents
 - [Features](#features)
@@ -12,7 +12,6 @@ RISCV emulator written in C++20
 - [Native CLI Option](#native-cli-option)
 - [Emscripten Build Instructions](#emscripten-build-instructions)
 - [Supported Platforms](#supported-platforms)
-- [Supported Software](#supported-software)
 - [Dependencies/Credits](#dependenciescredits)
 - [License](#license)
 
@@ -21,7 +20,7 @@ RISCV emulator written in C++20
 - RV64IMAFDCSU fully implemented
 - SV39/SV48/SV57 MMU
 - SDL window functioning as a terminal emulator
-    - Text mode support: Typing into the SDL window transmits data to the firmware via the 16550 UART interface, displaying received text from the firmware on the screen.
+    - Text mode support: When typing into the SDL window, data is sent to the firmware through the 16550 UART interface. Moreover, the window fully supports and accurately displays received UART data, including properly handled ANSI escape sequences.
     - Raw framebuffer mode support: The firmware can write to memory-mapped locations to populate a framebuffer and display the contents on the screen.
 - PLIC
 - CLINT
@@ -119,7 +118,7 @@ Note: The RISCV F and D extensions use standardized FPU exceptions. This impleme
 
 ## Native CLI option
 
-In the case you want to drop the libvterm, sdl2 and icu4c dependencies (and if you are on a platform that doesn't support them), you can compile the emulator with the "Native CLI" flag where it would only use the existing terminal emulator for communication.
+Should you need to eliminate the libvterm, sdl2, and icu4c dependencies, or if your platform is incompatible with them, consider compiling the emulator using the "Native CLI" flag. By doing so, the emulator will leverage the pre-existing terminal emulator for communication, bypassing the need for the aforementioned dependencies.
 
 To do this, use this as the CMake build step:
 
@@ -160,7 +159,7 @@ cd build_emscripten
 emcmake cmake .. -DUSE_EMSCRIPTEN=ON -DEM_LOAD_PATH={Path to binaries} -DCMAKE_BUILD_TYPE=Release
 ```
 
-Replace `{Path to binaries}` with the folder path containing your bios/firmware, kernel (if applicable), and dtb (if applicable). The Emscripten build will only have read access to this folder.
+Replace `{Path to binaries}` with the folder path containing your bios/firmware, kernel (if applicable), and dtb (if applicable). Note that the built Emscripten executable will exclusively have access to the contents of this directory and will not be able to read any other folders (subfolders are still accesible).
 
 5. Build the program by typing:
 
@@ -174,7 +173,7 @@ make
 node rv64gc_emu.js --bios ...
 ```
 
-Please note that this will be built using the NATIVE_CLI configuration.
+Please note that this will be built using the Native CLI configuration.
 
 ## Supported platforms
 
@@ -187,10 +186,6 @@ Please note that this will be built using the NATIVE_CLI configuration.
 | Windows x86     | ✅        | Native CLI only, currenly untested |
 | Windows aarch64 | ✅        | Native CLI only, currenly untested |
 | Emscripten      | ✅        | Native CLI only                    |
-
-## Supported software
-
-Linux buildroot configuration and a DOOM port can be found in the [rv64gc-emu-software](https://github.com/bane9/rv64gc-emu-software) git repository.
 
 ## Dependencies/credits
 

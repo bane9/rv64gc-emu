@@ -151,7 +151,10 @@ int main(int argc, char* argv[])
     auto bios = helper::load_file(bios_path);
     RamDevice dram = RamDevice(0x80000000U, ram_size_total, std::move(bios));
 
-    Cpu cpu = Cpu(dram.get_base_address(), ram_size);
+    Cpu cpu;
+
+    cpu.pc = dram.get_base_address();
+    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_base_address() + ram_size;
 
     gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
 
