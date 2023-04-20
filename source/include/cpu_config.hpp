@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef CPU_VERBOSE_DEBUG
-#define CPU_VERBOSE_DEBUG 0
+#define CPU_VERBOSE_DEBUG 1
 #endif
 
 #ifndef NATIVE_CLI
@@ -13,13 +13,11 @@
 #endif
 
 #if USE_TLB && !defined(TLB_COMPLIANT)
-// Performance slightly better when disabled.
+// Translation performance is better when disabled.
 // When disabled, MMU safety checks will only be performed
 // only at the time the page is being fetched, but not if
 // it's already cached. As a result, unpredictable behavior
 // may occur with invalid page tables,
 // and it presents a security risk.
-#define TLB_COMPLIANT 1
-#else
 #define TLB_COMPLIANT 0
 #endif

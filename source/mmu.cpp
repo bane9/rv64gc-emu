@@ -3,6 +3,7 @@
 #include "cpu_config.hpp"
 #include "helper.hpp"
 #include <cassert>
+#include <limits>
 #include <utility>
 
 namespace mmu
@@ -11,6 +12,8 @@ namespace mmu
 Mmu::Mmu(Cpu& cpu) : cpu(cpu)
 {
     mode = Mode::Bare;
+
+    flush_tlb();
 }
 
 uint64_t Mmu::load(uint64_t address, uint64_t length)
@@ -68,7 +71,7 @@ void Mmu::update()
     this->mppn = ppn << 12ULL;
     this->mode = static_cast<Mode::ModeValue>(mode);
 
-    tlb_cache = {};
+    flush_tlb();
 }
 
 uint32_t Mmu::get_levels()
@@ -125,7 +128,7 @@ void Mmu::set_cpu_error(uint64_t address, AccessType access_type)
         break;
     }
 
-    tlb_cache = {};
+    flush_tlb();
 }
 
 bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, int tlb_index)
@@ -173,6 +176,17 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
     entry.accessed = (entry.pte >> Pte::Accessed) & 1;
     entry.dirty = (entry.pte >> Pte::Dirty) & 1;
 
+    entry.ppn = get_ppn(entry.pte);
+
+    for (int j = 0; j < entry.i; j++)
+    {
+        if (entry.ppn[j] != 0)
+        {
+            set_cpu_error(address, acces_type);
+            return false;
+        }
+    }
+
 #if !TLB_COMPLIANT
     uint64_t mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
     uint64_t sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
@@ -215,17 +229,6 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
         break;
     case Mmu::AccessType::Instruction:
         if (!entry.execute)
-        {
-            set_cpu_error(address, acces_type);
-            return false;
-        }
-    }
-
-    entry.ppn = get_ppn(entry.pte);
-
-    for (int j = 0; j < entry.i; j++)
-    {
-        if (entry.ppn[j] != 0)
         {
             set_cpu_error(address, acces_type);
             return false;
@@ -308,6 +311,18 @@ TLBEntry* Mmu::get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode 
 #endif
 }
 
+void Mmu::flush_tlb()
+{
+    static constexpr uint32_t tlb_reset_age = std::numeric_limits<uint32_t>::max();
+
+    tlb_cache = {};
+
+    for (TLBEntry& entry : tlb_cache)
+    {
+        entry.age = tlb_reset_age;
+    }
+}
+
 uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 {
     if (mode == Mode::Bare)
@@ -338,10 +353,6 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 #if TLB_COMPLIANT
     uint64_t mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
     uint64_t sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
-
-    entry->user = (entry->pte >> Pte::User) & 1;
-    entry->accessed = (entry->pte >> Pte::Accessed) & 1;
-    entry->dirty = (entry->pte >> Pte::Dirty) & 1;
 
     if ((!entry->read && entry->write && !entry->execute) ||
         (!entry->read && entry->write && entry->execute))
@@ -381,17 +392,6 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
         break;
     case Mmu::AccessType::Instruction:
         if (!entry->execute)
-        {
-            set_cpu_error(address, acces_type);
-            return false;
-        }
-    }
-
-    entry->ppn = get_ppn(entry->pte);
-
-    for (int j = 0; j < entry->i; j++)
-    {
-        if (entry->ppn[j] != 0)
         {
             set_cpu_error(address, acces_type);
             return false;

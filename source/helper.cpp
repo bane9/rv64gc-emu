@@ -129,6 +129,6 @@ uint64_t helper::get_milliseconds()
 std::vector<uint8_t> helper::load_file(const char* filename)
 {
     std::ifstream input(filename, std::ios::binary);
-    return std::vector<uint8_t>((std::istreambuf_iterator<char>(input)),
-                                (std::istreambuf_iterator<char>()));
+    return std::vector<uint8_t>{std::istreambuf_iterator<char>(input),
+                                std::istreambuf_iterator<char>()};
 }

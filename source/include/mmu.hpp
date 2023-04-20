@@ -32,7 +32,7 @@ struct TLBEntry
     bool user;
 };
 
-constexpr uint64_t tlb_entries = 2;
+constexpr uint64_t tlb_entries = 3;
 
 struct Mode
 {
@@ -82,6 +82,7 @@ class Mmu
     bool fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, int tlb_index);
     TLBEntry* get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode);
     uint64_t translate(uint64_t address, AccessType acces_type);
+    void flush_tlb();
 
   public:
     uint32_t get_levels();

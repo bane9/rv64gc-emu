@@ -37,7 +37,7 @@ interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
     {
         plic_device->update_pending(*irqn);
 
-        cpu.cregs.store(csr::Address::MIP, cpu.cregs.load(csr::Address::MIP) | csr::Mask::SEIP);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::SEIP_BIT, 1);
     }
 #endif
 
@@ -93,7 +93,12 @@ void interrupt::process(Cpu& cpu, Interrupt::InterruptValue int_val)
 
     bool mideleg_flag = (cpu.cregs.load(csr::Address::MIDELEG) >> int_val) & 1;
 
-    if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && mideleg_flag)
+    if (int_val == Interrupt::InterruptValue::MachineTimer)
+    {
+        mideleg_flag = false;
+    }
+
+    if (mideleg_flag && (mode == cpu::Mode::User || mode == cpu::Mode::Supervisor))
     {
         cpu.mode = cpu::Mode::Supervisor;
 
@@ -158,7 +163,7 @@ void exception::process(Cpu& cpu)
 
     bool medeleg_flag = (cpu.cregs.load(csr::Address::MEDELEG) >> cpu.exc_val) & 1;
 
-    if ((mode == cpu::Mode::User || mode == cpu::Mode::Supervisor) && medeleg_flag)
+    if (medeleg_flag && (mode == cpu::Mode::User || mode == cpu::Mode::Supervisor))
     {
         cpu.mode = cpu::Mode::Supervisor;
 
