@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef CPU_VERBOSE_DEBUG
-#define CPU_VERBOSE_DEBUG 1
+#define CPU_VERBOSE_DEBUG 0
 #endif
 
 #ifndef NATIVE_CLI

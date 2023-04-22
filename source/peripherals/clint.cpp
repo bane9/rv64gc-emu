@@ -84,16 +84,16 @@ void ClintDevice::tick(Cpu& cpu)
 
     if (msip & 1)
     {
-        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP, 1);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MSIP_BIT, 1);
     }
 
     if (mtime >= mtimecmp)
     {
-        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP, 1);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP_BIT, 1);
     }
     else
     {
-        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP, 0);
+        cpu.cregs.write_bit(csr::Address::MIP, csr::Mask::MTIP_BIT, 0);
     }
 }
 

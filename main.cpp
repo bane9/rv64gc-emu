@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
         uint64_t dtb_offset = dram.data.size() - SIZE_MIB(2);
         cpu.regs[Cpu::reg_abi_name::a1] = dram.get_base_address() + dtb_offset;
 
-        if (!patch_dtb_ram_size(dtb, ram_size_total))
+        if (!patch_dtb_ram_size(dtb, ram_size))
         {
             std::cout << "Warning: couldn't find dtb memory size magic value (0x0badc0de),"
                          "allocating 66MiB (64MiB system, 2MiB dtb)\n";
