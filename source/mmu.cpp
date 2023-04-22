@@ -135,24 +135,26 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
 {
     TLBEntry& entry = tlb_cache[tlb_index];
 
-    entry.vpn = get_vpn(address);
+    pn_arr_t vpn = get_vpn(address);
 
     uint64_t levels = get_levels();
     uint64_t pte_size = 8;
 
-    entry.a = mppn;
-    entry.i = levels - 1;
+    uint64_t a = mppn;
+    int64_t i = levels - 1;
 
-    for (; entry.i >= 0; entry.i--)
+    for (; i >= 0; i--)
     {
-        entry.pte = cpu.bus.load(cpu, entry.a + entry.vpn[entry.i] * pte_size, 64);
+        entry.pte_addr = a + vpn[i] * pte_size;
+        entry.pte = cpu.bus.load(cpu, entry.pte_addr, 64);
 
-        entry.valid = (entry.pte >> Pte::Valid) & 1;
         entry.read = (entry.pte >> Pte::Read) & 1;
         entry.write = (entry.pte >> Pte::Write) & 1;
         entry.execute = (entry.pte >> Pte::Execute) & 1;
 
-        if (!entry.valid || (!entry.read && entry.write))
+        bool valid = (entry.pte >> Pte::Valid) & 1;
+
+        if (!valid || (!entry.read && entry.write))
         {
             set_cpu_error(address, acces_type);
             return false;
@@ -163,33 +165,54 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
             break;
         }
 
-        entry.a = ((entry.pte >> 10ULL) & 0xfffffffffffULL) * page_size;
+        a = ((entry.pte >> 10ULL) & 0xfffffffffffULL) * page_size;
     }
 
-    if (entry.i < 0)
+    if (i < 0)
     {
         set_cpu_error(address, acces_type);
         return false;
     }
 
-    entry.user = (entry.pte >> Pte::User) & 1;
-    entry.accessed = (entry.pte >> Pte::Accessed) & 1;
-    entry.dirty = (entry.pte >> Pte::Dirty) & 1;
+    pn_arr_t ppn = get_ppn(entry.pte);
 
-    entry.ppn = get_ppn(entry.pte);
-
-    for (int j = 0; j < entry.i; j++)
+    for (int j = 0; j < i; j++)
     {
-        if (entry.ppn[j] != 0)
+        if (ppn[j] != 0)
         {
             set_cpu_error(address, acces_type);
             return false;
         }
     }
 
+    entry.user = (entry.pte >> Pte::User) & 1;
+    entry.accessed = (entry.pte >> Pte::Accessed) & 1;
+    entry.dirty = (entry.pte >> Pte::Dirty) & 1;
+
+    if (i == 0)
+    {
+        uint64_t temp = (entry.pte >> 10ULL) & 0xfffffffffffULL;
+
+        entry.phys_base = temp << 12ULL;
+    }
+    else
+    {
+        entry.phys_base = 0;
+
+        for (uint64_t j = 0; j < i; j++)
+        {
+            entry.phys_base |= vpn[j] << (12ULL + (j * 9ULL));
+        }
+
+        for (uint64_t j = i; j < get_levels(); j++)
+        {
+            entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
+        }
+    }
+
 #if !TLB_COMPLIANT
-    uint64_t mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
-    uint64_t sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
+    bool mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
+    bool sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
 
     if ((!entry.read && entry.write && !entry.execute) ||
         (!entry.read && entry.write && entry.execute))
@@ -237,22 +260,16 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
 
     if (!entry.accessed || (acces_type == AccessType::Store && !entry.dirty))
     {
-        uint64_t pte_addr = entry.a + entry.vpn[entry.i] * page_size;
-        uint64_t cmp = cpu.bus.load(cpu, pte_addr, 64);
+        entry.pte |= 1ULL << Pte::Accessed;
+        entry.accessed = true;
 
-        if (entry.pte == cmp)
+        if (acces_type == AccessType::Store)
         {
-            entry.pte |= 1ULL << Pte::Accessed;
-            entry.accessed = true;
-
-            if (acces_type == AccessType::Store)
-            {
-                entry.pte |= 1ULL << Pte::Dirty;
-                entry.dirty = true;
-            }
-
-            cpu.bus.store(cpu, pte_addr, entry.pte, 64);
+            entry.pte |= 1ULL << Pte::Dirty;
+            entry.dirty = true;
         }
+
+        cpu.bus.store(cpu, entry.pte_addr, entry.pte, 64);
     }
 #endif
 
@@ -266,25 +283,28 @@ TLBEntry* Mmu::get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode 
     uint64_t oldest_tlb_age = 0;
     int oldest_tlb_index = 0;
 
-    if (address != 0) [[likely]]
+    for (int i = 0; i < tlb_cache.size(); i++)
     {
-        for (int i = 0; i < tlb_cache.size(); i++)
+        TLBEntry& entry = tlb_cache[i];
+
+        if (addr_masked == entry.virt_base)
         {
-            TLBEntry& entry = tlb_cache[i];
+            entry.age = 0;
 
-            if (addr_masked == entry.addr)
+            while (++i < tlb_cache.size())
             {
-                entry.age = 0;
-                return &entry;
+                ++tlb_cache[i].age;
             }
 
-            ++entry.age;
+            return &entry;
+        }
 
-            if (entry.age > oldest_tlb_age)
-            {
-                oldest_tlb_age = entry.age;
-                oldest_tlb_index = i;
-            }
+        ++entry.age;
+
+        if (entry.age > oldest_tlb_age)
+        {
+            oldest_tlb_age = entry.age;
+            oldest_tlb_index = i;
         }
     }
 
@@ -295,7 +315,7 @@ TLBEntry* Mmu::get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode 
     else
     {
         TLBEntry& entry = tlb_cache[oldest_tlb_index];
-        entry.addr = addr_masked;
+        entry.virt_base = addr_masked;
         entry.age = 0;
         return &entry;
     }
@@ -351,8 +371,8 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
     }
 
 #if TLB_COMPLIANT
-    uint64_t mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
-    uint64_t sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
+    bool mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
+    bool sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
 
     if ((!entry->read && entry->write && !entry->execute) ||
         (!entry->read && entry->write && entry->execute))
@@ -400,45 +420,20 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 
     if (!entry->accessed || (acces_type == AccessType::Store && !entry->dirty))
     {
-        uint64_t pte_addr = entry->a + entry->vpn[entry->i] * page_size;
-        uint64_t cmp = cpu.bus.load(cpu, pte_addr, 64);
+        entry->pte |= 1ULL << Pte::Accessed;
+        entry->accessed = true;
 
-        if (entry->pte == cmp)
+        if (acces_type == AccessType::Store)
         {
-            entry->pte |= 1ULL << Pte::Accessed;
-            entry->accessed = true;
-
-            if (acces_type == AccessType::Store)
-            {
-                entry->pte |= 1ULL << Pte::Dirty;
-                entry->dirty = true;
-            }
-
-            cpu.bus.store(cpu, pte_addr, entry->pte, 64);
+            entry->pte |= 1ULL << Pte::Dirty;
+            entry->dirty = true;
         }
+
+        cpu.bus.store(cpu, entry->pte_addr, entry->pte, 64);
     }
 #endif
 
-    uint64_t phys_addr = address & 0xfffULL;
-
-    if (entry->i == 0)
-    {
-        uint64_t temp = (entry->pte >> 10ULL) & 0xfffffffffffULL;
-
-        return phys_addr | (temp << 12ULL);
-    }
-
-    for (uint64_t j = 0; j < entry->i; j++)
-    {
-        phys_addr |= entry->vpn[j] << (12ULL + (j * 9ULL));
-    }
-
-    for (uint64_t j = entry->i; j < get_levels(); j++)
-    {
-        phys_addr |= entry->ppn[j] << (12ULL + (j * 9ULL));
-    }
-
-    return phys_addr;
+    return entry->phys_base | (address & 0xfffULL);
 }
 
 } // namespace mmu

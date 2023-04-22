@@ -16,23 +16,20 @@ using pn_arr_t = std::array<uint64_t, 5>;
 
 struct TLBEntry
 {
-    pn_arr_t vpn;
-    pn_arr_t ppn;
+    uint64_t virt_base;
+    uint64_t phys_base;
     uint64_t pte;
-    int64_t i;
-    uint64_t a;
-    uint64_t addr;
+    uint64_t pte_addr;
     uint64_t age;
     bool dirty;
     bool accessed;
-    bool valid;
     bool read;
     bool write;
     bool execute;
     bool user;
 };
 
-constexpr uint64_t tlb_entries = 3;
+constexpr uint64_t tlb_entries = 2;
 
 struct Mode
 {
