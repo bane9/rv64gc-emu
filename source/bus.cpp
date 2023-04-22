@@ -3,6 +3,7 @@
 #include "clint.hpp"
 #include "cpu.hpp"
 #include "gpu.hpp"
+#include "virtio_blk.hpp"
 #include <algorithm>
 #include <fmt/core.h>
 
@@ -66,8 +67,16 @@ void Bus::tick_devices(Cpu& cpu)
     static ClintDevice* clint_device =
         static_cast<ClintDevice*>(find_bus_device(ClintDevice::base_addr));
 
+    static virtio::VirtioBlkDevice* virtio_blk_device =
+        static_cast<virtio::VirtioBlkDevice*>(find_bus_device(virtio::cfg::virtio_base_address));
+
     gpu_device->tick(cpu);
     clint_device->tick(cpu);
+
+    if (virtio_blk_device != nullptr)
+    {
+        virtio_blk_device->tick(cpu);
+    }
 #endif
 }
 

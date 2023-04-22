@@ -1,10 +1,12 @@
 #include "bus.hpp"
 #include "clint.hpp"
 #include "cpu.hpp"
+#include "cpu_config.hpp"
 #include "gpu.hpp"
 #include "helper.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
+#include "virtio_blk.hpp"
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -19,14 +21,15 @@ void print_usage(char* argv[])
     std::cerr << fmt::format(
         "Usage: {} [options]\n"
         "Options:\n"
-        "  -b, --bios   Path to the BIOS file (mandatory)\n"
+        "  -b, --bios Path to the BIOS file (mandatory)\n"
 #if !NATIVE_CLI
-        "  -f, --font   Path to the font file (mandatory)\n"
+        "  -f, --font Path to the font file (mandatory)\n"
 #endif
-        "  -d, --dtb    Path to the device tree blob file (optional, "
+        "  -d, --dtb Path to the device tree blob file (optional, "
         "mandatory if kernel is present)\n"
         "  -k, --kernel Path to the kernel file (optional)\n"
-        "  -m, --memory Emulator RAM buffer size in MiB (optional, default 64 MiB)\n",
+        "  -m, --memory Emulator RAM buffer size in MiB (optional, default 64 MiB)\n"
+        "  -v, --virtual-drive Path to virtual disk image to use as a filesystem (optional)\n",
         argv[0]);
 }
 
@@ -69,6 +72,7 @@ int main(int argc, char* argv[])
     const char* font_path = nullptr;
     const char* dtb_path = nullptr;
     const char* kernel_path = nullptr;
+    const char* virt_drive_path = nullptr;
 
     uint64_t ram_size = SIZE_MIB(64);
 
@@ -79,6 +83,7 @@ int main(int argc, char* argv[])
         {"dtb", required_argument, nullptr, 'd'},
         {"kernel", required_argument, nullptr, 'k'},
         {"memory", required_argument, nullptr, 'm'},
+        {"virtual-drive", required_argument, nullptr, 'v'},
         {}
     };
     // clang-format on
@@ -86,7 +91,7 @@ int main(int argc, char* argv[])
     int opt;
     int option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "b:f:d:k:m:", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "b:f:d:k:m:v:", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -104,6 +109,9 @@ int main(int argc, char* argv[])
             break;
         case 'm':
             ram_size = SIZE_MIB(atoi(optarg));
+            break;
+        case 'v':
+            virt_drive_path = optarg;
             break;
         default:
             print_usage(argv);
@@ -149,9 +157,11 @@ int main(int argc, char* argv[])
     }
 
     auto bios = helper::load_file(bios_path);
-    RamDevice dram = RamDevice(0x80000000U, ram_size_total, std::move(bios));
+    RamDevice dram = RamDevice(DRAM_BASE, ram_size_total, std::move(bios));
 
     Cpu cpu;
+
+    virtio::VirtioBlkDevice* virtio_blk_device = nullptr;
 
     if (dtb_path)
     {
@@ -166,8 +176,9 @@ int main(int argc, char* argv[])
 
         if (!patch_dtb_ram_size(dtb, ram_size))
         {
-            std::cout << "Warning: couldn't find dtb memory size magic value (0x0badc0de),"
-                         "allocating 66MiB (64MiB system, 2MiB dtb)\n";
+            std::cout << "Warning: couldn't find dtb memory size magic value "
+                         "(0x0badc0de), make sure that the memory the emulator allocates is equal "
+                         "or greater than one specified in the dtb\n";
         }
 
         memcpy(dram.data.data() + dtb_offset, dtb.data(), dtb.size());
@@ -184,6 +195,17 @@ int main(int argc, char* argv[])
         memcpy(dram.data.data() + 0x200000U, kernel.data(), kernel.size());
     }
 
+    if (virt_drive_path)
+    {
+        if (!file_exists(virt_drive_path))
+        {
+            error_exit(argv, "virt_drive path invalid");
+        }
+
+        std::vector<uint8_t> virt_drive = helper::load_file(virt_drive_path);
+        virtio_blk_device = new virtio::VirtioBlkDevice(std::move(virt_drive));
+    }
+
     cpu.pc = dram.get_base_address();
     cpu.regs[Cpu::reg_abi_name::sp] = dram.get_base_address() + ram_size;
 
@@ -195,6 +217,12 @@ int main(int argc, char* argv[])
     cpu.bus.add_device(&dram);
     cpu.bus.add_device(&gpu);
     cpu.bus.add_device(&clint);
+
+    if (virtio_blk_device != nullptr)
+    {
+        cpu.bus.add_device(virtio_blk_device);
+    }
+
     cpu.bus.add_device(&plic);
 
     cpu.run();

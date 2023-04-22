@@ -12,11 +12,13 @@
 #define USE_TLB 1
 #endif
 
+#define DRAM_BASE 0x80000000U
+
 #if USE_TLB && !defined(TLB_COMPLIANT)
 // Translation performance is better when disabled.
 // When disabled, MMU safety checks will only be performed
 // on TLB cache miss, but not if the entry is already in the cache.
-#define TLB_COMPLIANT 1
+#define TLB_COMPLIANT 0
 #else
 // Chooses the desired code path. When TLB is disabled translation is still compliant regardless of
 // the TLB_COMPLIANT value.

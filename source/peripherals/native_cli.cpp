@@ -47,36 +47,33 @@ GpuDevice::~GpuDevice()
 
 uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
-    if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
+    switch (address)
     {
-        switch (address)
+    case cfg::thr: {
+        if (lsr & cfg::lsr_dr)
         {
-        case cfg::thr: {
-            if (lsr & cfg::lsr_dr)
-            {
-                lsr &= ~cfg::lsr_dr;
-                dispatch_interrupt();
-            }
+            lsr &= ~cfg::lsr_dr;
+            dispatch_interrupt();
+        }
 
-            return val;
-        }
-        case cfg::ier:
-            return ier;
-        case cfg::isr:
-            return isr;
-        case cfg::lcr:
-            return lcr;
-        case cfg::mcr:
-            return mcr;
-        case cfg::lsr:
-            return lsr;
-        case cfg::msr:
-            return msr;
-        case cfg::scr:
-            return scr;
-        default:
-            break;
-        }
+        return val;
+    }
+    case cfg::ier:
+        return ier;
+    case cfg::isr:
+        return isr;
+    case cfg::lcr:
+        return lcr;
+    case cfg::mcr:
+        return mcr;
+    case cfg::lsr:
+        return lsr;
+    case cfg::msr:
+        return msr;
+    case cfg::scr:
+        return scr;
+    default:
+        break;
     }
 
     return 0;
@@ -84,34 +81,31 @@ uint64_t GpuDevice::load(Bus& bus, uint64_t address, uint64_t length)
 
 void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t length)
 {
-    if (helper::value_in_range_inclusive(address, uart_base_addr, uart_base_addr + uart_size))
+    switch (address)
     {
-        switch (address)
-        {
-        case cfg::thr: {
-            char c = static_cast<char>(value);
-            std::cout << c;
-            break;
-        }
-        case cfg::ier:
-            ier = value;
-            dispatch_interrupt();
-            break;
-        case cfg::fcr:
-            fcr = value;
-            break;
-        case cfg::lcr:
-            lcr = value;
-            break;
-        case cfg::mcr:
-            mcr = value;
-            break;
-        case cfg::scr:
-            scr = value;
-            break;
-        default:
-            break;
-        }
+    case cfg::thr: {
+        char c = static_cast<char>(value);
+        std::cout << c;
+        break;
+    }
+    case cfg::ier:
+        ier = value;
+        dispatch_interrupt();
+        break;
+    case cfg::fcr:
+        fcr = value;
+        break;
+    case cfg::lcr:
+        lcr = value;
+        break;
+    case cfg::mcr:
+        mcr = value;
+        break;
+    case cfg::scr:
+        scr = value;
+        break;
+    default:
+        break;
     }
 }
 
@@ -130,10 +124,12 @@ void GpuDevice::stdin_reader()
 {
     while (!thread_done)
     {
-        char c;
-        std::cin >> c;
+        char c = fgetc(stdin);
 
-        read_char.store(c, std::memory_order::release);
+        if (c != EOF)
+        {
+            read_char.store(c, std::memory_order::release);
+        }
     }
 }
 

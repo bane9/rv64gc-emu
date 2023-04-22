@@ -2,6 +2,7 @@
 #include "gpu.hpp"
 #include "interupt.hpp"
 #include "plic.hpp"
+#include "virtio_blk.hpp"
 #include <fmt/core.h>
 
 interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
@@ -31,7 +32,25 @@ interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
     static PlicDevice* plic_device =
         static_cast<PlicDevice*>(cpu.bus.find_bus_device(PlicDevice::base_addr));
 
-    std::optional<uint32_t> irqn = gpu_device->is_interrupting();
+    static virtio::VirtioBlkDevice* virtio_blk_device = static_cast<virtio::VirtioBlkDevice*>(
+        cpu.bus.find_bus_device(virtio::cfg::virtio_base_address));
+
+    std::optional<uint32_t> irqn;
+
+    do
+    {
+        // A crude sorting method
+        if ((irqn = gpu_device->is_interrupting())) [[unlikely]]
+        {
+            break;
+        }
+
+        if ((virtio_blk_device != nullptr) && (irqn = virtio_blk_device->is_interrupting()))
+            [[unlikely]]
+        {
+            break;
+        }
+    } while (false);
 
     if (irqn) [[unlikely]]
     {

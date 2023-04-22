@@ -76,7 +76,7 @@ class Mmu
 
   public:
     void update();
-    bool fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, int tlb_index);
+    bool fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, TLBEntry& entry);
     TLBEntry* get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode);
     uint64_t translate(uint64_t address, AccessType acces_type);
     void flush_tlb();

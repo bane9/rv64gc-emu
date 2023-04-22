@@ -131,10 +131,8 @@ void Mmu::set_cpu_error(uint64_t address, AccessType access_type)
     flush_tlb();
 }
 
-bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, int tlb_index)
+bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode, TLBEntry& entry)
 {
-    TLBEntry& entry = tlb_cache[tlb_index];
-
     pn_arr_t vpn = get_vpn(address);
 
     uint64_t levels = get_levels();
@@ -189,25 +187,16 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
     entry.accessed = (entry.pte >> Pte::Accessed) & 1;
     entry.dirty = (entry.pte >> Pte::Dirty) & 1;
 
-    if (i == 0)
-    {
-        uint64_t temp = (entry.pte >> 10ULL) & 0xfffffffffffULL;
+    entry.phys_base = 0;
 
-        entry.phys_base = temp << 12ULL;
+    for (uint64_t j = 0; j < i; j++)
+    {
+        entry.phys_base |= vpn[j] << (12ULL + (j * 9ULL));
     }
-    else
+
+    for (uint64_t j = i; j < get_levels(); j++)
     {
-        entry.phys_base = 0;
-
-        for (uint64_t j = 0; j < i; j++)
-        {
-            entry.phys_base |= vpn[j] << (12ULL + (j * 9ULL));
-        }
-
-        for (uint64_t j = i; j < get_levels(); j++)
-        {
-            entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
-        }
+        entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
     }
 
 #if !TLB_COMPLIANT
@@ -308,27 +297,24 @@ TLBEntry* Mmu::get_tlb_entry(uint64_t address, AccessType acces_type, cpu::Mode 
         }
     }
 
-    if (!fetch_pte(address, acces_type, cpu_mode, oldest_tlb_index))
+    TLBEntry& entry = tlb_cache[oldest_tlb_index];
+
+    if (fetch_pte(address, acces_type, cpu_mode, entry))
     {
-        return nullptr;
-    }
-    else
-    {
-        TLBEntry& entry = tlb_cache[oldest_tlb_index];
         entry.virt_base = addr_masked;
         entry.age = 0;
         return &entry;
     }
 #else
-    if (!fetch_pte(address, acces_type, cpu_mode, 0))
+    TLBEntry& entry = tlb_cache[0];
+
+    if (fetch_pte(address, acces_type, cpu_mode, entry))
     {
-        return nullptr;
-    }
-    else
-    {
-        return &tlb_cache[0];
+        return &entry;
     }
 #endif
+
+    return nullptr;
 }
 
 void Mmu::flush_tlb()
@@ -365,7 +351,7 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 
     TLBEntry* entry = get_tlb_entry(address, acces_type, cpu_mode);
 
-    if (entry == nullptr)
+    if (entry == nullptr) [[unlikely]]
     {
         return 0;
     }
