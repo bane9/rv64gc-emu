@@ -49,7 +49,7 @@ VirtqDesc VirtioBlkDevice::load_desc(Cpu& cpu, uint64_t address)
 
     VirtqDesc desc;
     desc.addr = desc_addr;
-    desc.len = tmp & 0xffffffff;
+    desc.len = tmp & 0xffffffffU;
     desc.flags = (tmp >> 32) & 0xffff;
     desc.next = (tmp >> 48) & 0xffff;
 
@@ -98,6 +98,12 @@ uint64_t VirtioBlkDevice::load(Bus& bus, uint64_t address, uint64_t length)
 {
     address -= base_addr;
 
+    if (address >= cfg::config)
+    {
+        int index = address - cfg::config;
+        return config[index];
+    }
+
     switch (address)
     {
     case cfg::magic_value:
@@ -128,6 +134,15 @@ uint64_t VirtioBlkDevice::load(Bus& bus, uint64_t address, uint64_t length)
 void VirtioBlkDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t length)
 {
     address -= base_addr;
+
+    if (address >= cfg::config)
+    {
+        int index = address - cfg::config;
+        config[index] = (value >> (index * 8)) & 0xff;
+
+        return;
+    }
+
     value &= 0xffffffffU;
 
     switch (address)
@@ -151,13 +166,8 @@ void VirtioBlkDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t
         }
         break;
     }
-    case cfg::queue_sel: {
-        if (value != 0)
-        {
-            return;
-        }
+    case cfg::queue_sel:
         break;
-    }
     case cfg::queue_num: {
         if (queue_sel == 0)
         {
@@ -229,6 +239,7 @@ std::optional<uint32_t> VirtioBlkDevice::is_interrupting()
 {
     if (isr & 0x1)
     {
+        isr &= ~0x1;
         return cfg::virtio_irqn;
     }
 
