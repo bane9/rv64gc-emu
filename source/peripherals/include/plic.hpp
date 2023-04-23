@@ -51,5 +51,8 @@ class PlicDevice : public BusDevice
 
     static constexpr uint64_t end_addr = base_addr + 0x208000ULL;
 
+  public:
+    static constexpr uint64_t context_offset = 0x1000ULL;
+
     static constexpr std::string_view peripheral_name = "PLIC";
 };

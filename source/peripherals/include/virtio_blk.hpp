@@ -115,18 +115,18 @@ class VirtioBlkDevice : public BusDevice
     uint64_t clock = 0;
     uint64_t notify_clock = 0;
 
-    std::array<Virtq, 1> vq;
-    uint16_t queue_sel;
-    std::array<uint32_t, 2> host_features;
-    std::array<uint32_t, 2> guest_features;
-    uint32_t host_features_sel;
-    uint32_t guest_features_sel;
-    uint32_t guest_page_shift;
-    uint32_t queue_pfn;
-    uint32_t queue_notify;
-    uint8_t isr;
-    uint8_t status;
-    std::array<uint8_t, 8> config;
+    std::array<Virtq, 1> vq = {};
+    uint16_t queue_sel = 0;
+    std::array<uint32_t, 2> host_features = {};
+    std::array<uint32_t, 2> guest_features = {};
+    uint32_t host_features_sel = 0;
+    uint32_t guest_features_sel = 0;
+    uint32_t guest_page_shift = 0;
+    uint32_t queue_pfn = 0;
+    uint32_t queue_notify = 0;
+    uint8_t isr = 0;
+    uint8_t status = 0;
+    std::array<uint8_t, 8> config = {};
 
     std::vector<uint8_t> rfsimg;
 

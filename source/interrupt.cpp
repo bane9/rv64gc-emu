@@ -40,13 +40,13 @@ interrupt::Interrupt::InterruptValue interrupt::get_pending_interrupt(Cpu& cpu)
     do
     {
         // A crude sorting method
-        if ((irqn = gpu_device->is_interrupting())) [[unlikely]]
+        if ((virtio_blk_device != nullptr) && (irqn = virtio_blk_device->is_interrupting()))
+            [[unlikely]]
         {
             break;
         }
 
-        if ((virtio_blk_device != nullptr) && (irqn = virtio_blk_device->is_interrupting()))
-            [[unlikely]]
+        if ((irqn = gpu_device->is_interrupting())) [[unlikely]]
         {
             break;
         }
