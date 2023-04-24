@@ -97,6 +97,9 @@ class Mmu
     uint32_t mppn;
 
   public:
+    uint64_t last_real_address;
+
+  public:
     Cpu& cpu;
 };
 } // namespace mmu

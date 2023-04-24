@@ -78,11 +78,11 @@ uint32_t Mmu::get_levels()
 {
     switch (mode)
     {
-    case mmu::Mode::SV39:
+    case Mode::SV39:
         return 3;
-    case mmu::Mode::SV48:
+    case Mode::SV48:
         return 4;
-    case mmu::Mode::SV57:
+    case Mode::SV57:
         return 5;
     default:
         return 0;
@@ -103,11 +103,23 @@ pn_arr_t Mmu::get_vpn(uint64_t address)
 
 pn_arr_t Mmu::get_ppn(uint64_t pte)
 {
-    pn_arr_t ppn = {};
+    pn_arr_t ppn;
 
-    for (int i = 0; i < get_levels(); i++)
+    switch (mode)
     {
-        ppn[i] = (pte >> (10ULL + i * 9ULL)) & 0x1ffULL;
+    case Mode::SV39:
+        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x03ffffffULL};
+        break;
+    case Mode::SV48:
+        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x1ffULL,
+               (pte >> 37) & 0x1ffffULL};
+        break;
+    case Mode::SV57:
+        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x1ffULL,
+               (pte >> 37) & 0x1ffULL, (pte >> 46) & 0xffULL};
+        break;
+    default:
+        break;
     }
 
     return ppn;
@@ -418,7 +430,7 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
         cpu.bus.store(cpu, entry->pte_addr, entry->pte, 64);
     }
 #endif
-
+    last_real_address = entry->phys_base | (address & 0xfffULL);
     return entry->phys_base | (address & 0xfffULL);
 }
 

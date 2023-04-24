@@ -9,10 +9,16 @@
 #endif
 
 #ifndef USE_TLB
-#define USE_TLB 1
+#define USE_TLB 0
 #endif
 
+#ifndef DRAM_BASE
 #define DRAM_BASE 0x80000000U
+#endif
+
+#ifndef KERNEL_OFFSET
+#define KERNEL_OFFSET 0x20000U
+#endif
 
 #if USE_TLB && !defined(TLB_COMPLIANT)
 // Translation performance is better when disabled.

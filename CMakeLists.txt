@@ -78,7 +78,7 @@ if (USE_EMSCRIPTEN)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(OPTIMIZATION_FLAG "-O0")
+  set(OPTIMIZATION_FLAG "-Og")
   target_compile_options(rv64gc_emu PRIVATE -fsanitize=address)
   target_link_options(rv64gc_emu PRIVATE -fsanitize=address)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
