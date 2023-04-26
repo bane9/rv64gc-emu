@@ -2,7 +2,6 @@
 #include "cpu.hpp"
 #include "cpu_config.hpp"
 #include "helper.hpp"
-#include "ram.hpp"
 
 namespace virtio
 {
@@ -10,7 +9,7 @@ VirtioBlkDevice::VirtioBlkDevice(std::vector<uint8_t> data) : rfsimg(std::move(d
 {
     queue_notify = cfg::queue_notify_reset;
 
-    vq[0].align = cfg::virtqueue_align;
+    vq.align = cfg::virtqueue_align;
 
     config[1] = 0x20;
     config[2] = 0x03;
@@ -32,9 +31,10 @@ void VirtioBlkDevice::reset()
 
 void VirtioBlkDevice::update()
 {
-    vq[0].desc = queue_pfn << guest_page_shift;
-    vq[0].avail = vq[0].desc + vq[0].num * sizeof(VirtqDesc);
-    vq[0].used = helper::align_up(vq[0].avail + offsetof(VRingAvail, ring[vq[0].num]), vq[0].align);
+    vq.desc = queue_pfn * guest_page_size;
+    vq.avail = vq.desc + vq.num * sizeof(VirtqDesc);
+    vq.used = helper::align_up(vq.avail + offsetof(VRingAvail, ring) + vq.num * sizeof(uint16_t),
+                               vq.align);
 }
 
 VirtqDesc VirtioBlkDevice::load_desc(Cpu& cpu, uint64_t address)
@@ -50,14 +50,14 @@ VirtqDesc VirtioBlkDevice::load_desc(Cpu& cpu, uint64_t address)
 
 void VirtioBlkDevice::access_disk(Cpu& cpu)
 {
-    uint64_t desc = vq[0].desc;
-    uint64_t avail = vq[0].avail;
-    uint64_t used = vq[0].used;
+    uint64_t desc = vq.desc;
+    uint64_t avail = vq.avail;
+    uint64_t used = vq.used;
 
-    uint64_t queue_size = vq[0].num;
+    uint64_t queue_size = vq.num;
 
-    int idx = cpu.bus.load(cpu, avail + offsetof(VRingAvail, idx), 16);
-    int desc_offset = cpu.bus.load(cpu, avail + 4 + (idx % queue_size) * sizeof(uint16_t), 16);
+    uint16_t idx = cpu.bus.load(cpu, avail + offsetof(VRingAvail, idx), 16);
+    uint16_t desc_offset = cpu.bus.load(cpu, avail + 4 + (idx % queue_size) * sizeof(uint16_t), 16);
 
     VirtqDesc desc0 = load_desc(cpu, desc + sizeof(VirtqDesc) * desc_offset);
     VirtqDesc desc1 = load_desc(cpu, desc + sizeof(VirtqDesc) * desc0.next);
@@ -66,17 +66,21 @@ void VirtioBlkDevice::access_disk(Cpu& cpu)
     uint32_t blk_req_type = cpu.bus.load(cpu, desc0.addr, 32);
     uint64_t blk_req_sector = cpu.bus.load(cpu, desc0.addr + 8, 64);
 
-    static RamDevice* ram_device = static_cast<RamDevice*>(cpu.bus.find_bus_device(DRAM_BASE));
-
     if (blk_req_type == cfg::blk_t_out)
     {
-        memcpy(rfsimg.data() + (blk_req_sector * cfg::sector_size),
-               ram_device->data.data() + (desc1.addr - DRAM_BASE), desc1.len);
+        for (uint32_t i = 0; i < desc1.len; i++)
+        {
+            rfsimg[blk_req_sector * cfg::sector_size + i] = cpu.bus.load(cpu, desc1.addr + i, 8);
+        }
     }
     else
     {
-        memcpy(ram_device->data.data() + (desc1.addr - DRAM_BASE),
-               rfsimg.data() + (blk_req_sector * cfg::sector_size), desc1.len);
+        for (uint32_t i = 0; i < desc1.len; i++)
+        {
+            uint8_t byte = rfsimg[blk_req_sector * cfg::sector_size + i];
+
+            cpu.bus.store(cpu, desc1.addr + i, byte, 8);
+        }
     }
 
     cpu.bus.store(cpu, desc2.addr, cfg::blk_s_ok, 8);
@@ -150,17 +154,17 @@ void VirtioBlkDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t
         break;
     }
     case cfg::guest_page_size: {
-        guest_page_shift = __builtin_ctz(value);
+        guest_page_size = value;
         break;
     }
     case cfg::queue_sel:
         break;
     case cfg::queue_num: {
-        vq[0].num = value;
+        vq.num = value;
         break;
     }
     case cfg::queue_align: {
-        vq[0].align = value;
+        vq.align = value;
         break;
     }
     case cfg::queue_pfn: {
@@ -174,7 +178,7 @@ void VirtioBlkDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t
         break;
     }
     case cfg::interrupt_ack: {
-        isr &= ~value;
+        isr = ~value;
         break;
     }
     case cfg::status: {
@@ -203,6 +207,7 @@ void VirtioBlkDevice::tick(Cpu& cpu)
         isr |= 0x1;
 
         access_disk(cpu);
+
         queue_notify = cfg::queue_notify_reset;
     }
 

@@ -126,9 +126,9 @@ uint64_t helper::get_milliseconds()
     return std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 }
 
-uint64_t helper::align_up(uint64_t value, uint64_t alligment)
+uint64_t helper::align_up(uint64_t value, uint64_t alignment)
 {
-    return ((value + alligment - 1) / alligment) * alligment;
+    return ((value + alignment - 1) / alignment) * alignment;
 }
 
 std::vector<uint8_t> helper::load_file(const char* filename)

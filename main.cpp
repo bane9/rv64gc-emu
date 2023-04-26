@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
         }
 
         std::vector<uint8_t> kernel = helper::load_file(kernel_path);
-        memcpy(dram.data.data() + 0x200000U, kernel.data(), kernel.size());
+        memcpy(dram.data.data() + KERNEL_OFFSET, kernel.data(), kernel.size());
     }
 
     if (virt_drive_path)
@@ -214,16 +214,24 @@ int main(int argc, char* argv[])
     ClintDevice clint;
     PlicDevice plic;
 
+    // Devices manually sorted by frequency of use
     cpu.bus.add_device(&dram);
+
+#if !NATIVE_CLI
     cpu.bus.add_device(&gpu);
+#endif
+
     cpu.bus.add_device(&clint);
+    cpu.bus.add_device(&plic);
 
     if (virtio_blk_device != nullptr)
     {
         cpu.bus.add_device(virtio_blk_device);
     }
 
-    cpu.bus.add_device(&plic);
+#if NATIVE_CLI
+    cpu.bus.add_device(&gpu);
+#endif
 
     cpu.run();
 }

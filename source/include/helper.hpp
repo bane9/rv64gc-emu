@@ -45,7 +45,7 @@ uint64_t write_bits(uint64_t value, uint64_t upper_offset, uint64_t lower_offset
                     uint64_t write_value);
 
 uint64_t get_milliseconds();
-uint64_t align_up(uint64_t value, uint64_t alligment);
+uint64_t align_up(uint64_t value, uint64_t alignment);
 
 std::vector<uint8_t> load_file(const char* filename);
 

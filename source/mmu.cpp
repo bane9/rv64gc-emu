@@ -105,18 +105,21 @@ pn_arr_t Mmu::get_ppn(uint64_t pte)
 {
     pn_arr_t ppn;
 
+    for (int i = 0; i < get_levels() - 1; i++)
+    {
+        ppn[i] = (pte >> (10ULL + i * 9ULL)) & 0x1ffULL;
+    }
+
     switch (mode)
     {
     case Mode::SV39:
-        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x03ffffffULL};
+        ppn[2] = (pte >> 28) & 0x03ffffffULL;
         break;
     case Mode::SV48:
-        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x1ffULL,
-               (pte >> 37) & 0x1ffffULL};
+        ppn[3] = (pte >> 37) & 0x1ffffULL;
         break;
     case Mode::SV57:
-        ppn = {(pte >> 10) & 0x1ffULL, (pte >> 19) & 0x1ffULL, (pte >> 28) & 0x1ffULL,
-               (pte >> 37) & 0x1ffULL, (pte >> 46) & 0xffULL};
+        ppn[4] = (pte >> 46) & 0xffULL;
         break;
     default:
         break;
@@ -148,7 +151,7 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
     pn_arr_t vpn = get_vpn(address);
 
     uint64_t levels = get_levels();
-    uint64_t pte_size = 8;
+    constexpr uint64_t pte_size = 8;
 
     uint64_t a = mppn;
     int64_t i = levels - 1;
@@ -199,18 +202,24 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
     entry.accessed = (entry.pte >> Pte::Accessed) & 1;
     entry.dirty = (entry.pte >> Pte::Dirty) & 1;
 
-    entry.phys_base = 0;
-
-    for (uint64_t j = 0; j < i; j++)
+    if (i == 0)
     {
-        entry.phys_base |= vpn[j] << (12ULL + (j * 9ULL));
+        entry.phys_base = ((entry.pte >> 10) & 0x0fffffffffffULL) << 12;
     }
-
-    for (uint64_t j = i; j < get_levels(); j++)
+    else
     {
-        entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
-    }
+        entry.phys_base = 0;
 
+        for (uint64_t j = 0; j < i; j++)
+        {
+            entry.phys_base |= vpn[j] << (12ULL + (j * 9ULL));
+        }
+
+        for (uint64_t j = i; j < levels; j++)
+        {
+            entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
+        }
+    }
 #if !TLB_COMPLIANT
     bool mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
     bool sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
@@ -430,7 +439,6 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
         cpu.bus.store(cpu, entry->pte_addr, entry->pte, 64);
     }
 #endif
-    last_real_address = entry->phys_base | (address & 0xfffULL);
     return entry->phys_base | (address & 0xfffULL);
 }
 
