@@ -204,7 +204,7 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
 
     if (i == 0)
     {
-        entry.phys_base = ((entry.pte >> 10) & 0x0fffffffffffULL) << 12;
+        entry.phys_base = ((entry.pte >> 10ULL) & 0x0fffffffffffULL) << 12ULL;
     }
     else
     {

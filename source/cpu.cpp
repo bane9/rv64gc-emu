@@ -24,9 +24,42 @@
 #include <sstream>
 #include <utility>
 
-Cpu::Cpu() : mmu(*this)
+Cpu::Cpu(RamDevice* dram_device, gpu::GpuDevice* gpu_device,
+         virtio::VirtioBlkDevice* virtio_blk_device)
+    : mmu(*this)
 {
     mode = cpu::Mode::Machine;
+
+    pc = dram_device->get_base_address();
+    regs[reg_abi_name::sp] = dram_device->get_end_address();
+
+    bus.add_device(dram_device);
+
+#if !NATIVE_CLI
+    if (gpu_device != nullptr)
+    {
+        bus.add_device(gpu_device);
+    }
+#endif
+
+    bus.add_device(&plic_device);
+    bus.add_device(&clint_device);
+
+#if NATIVE_CLI
+    if (gpu_device != nullptr)
+    {
+        bus.add_device(gpu_device);
+    }
+#endif
+
+    if (virtio_blk_device != nullptr)
+    {
+        bus.add_device(virtio_blk_device);
+    }
+
+    this->dram_device = dram_device;
+    this->gpu_device = gpu_device;
+    this->virtio_blk_device = virtio_blk_device;
 
     csr::init_handler_array();
 }

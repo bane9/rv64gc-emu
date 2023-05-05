@@ -108,17 +108,7 @@ bool test_binary(const std::filesystem::directory_entry& binary_path)
     RamDevice dram =
         RamDevice(0x80000000U, SIZE_KIB(64), helper::load_file(binary_path.path().c_str()));
 
-    Cpu cpu;
-
-    cpu.pc = dram.get_base_address();
-    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_end_address();
-
-    ClintDevice clint;
-    PlicDevice plic;
-
-    cpu.bus.add_device(&dram);
-    cpu.bus.add_device(&clint);
-    cpu.bus.add_device(&plic);
+    Cpu cpu = Cpu(&dram);
 
     std::stringstream ss;
 

@@ -24,6 +24,7 @@ Welcome to the RV64GC Emulator repository, a RISC-V emulator project developed u
     - Raw framebuffer mode support: The firmware can write to memory-mapped locations to populate a framebuffer and display the contents on the screen.
 - PLIC
 - CLINT
+- VIRTIO
 - bios (firmware), kernel and dtb loading
 - Successfully completes all [RISCV imafdcsu ISA tests](https://github.com/riscv-software-src/riscv-tests), with some caveats (see [Testing](#testing))
 
@@ -68,7 +69,8 @@ Options:
   -f, --font   Path to the font file (mandatory)
   -d, --dtb    Path to the device tree blob file (optional, mandatory if kernel is present)
   -k, --kernel Path to the kernel file (optional)
-  -m, --memory Emulator RAM buffer size in MiB (optional, default 66 MiB)
+  -m, --memory Emulator RAM buffer size in MiB (optional, default 64 MiB)
+  -v, --virtual-drive Path to virtual disk image to use as a filesystem (optional)
 ```
 
 `bios` option is meant either for bare-metal firmware, or for a linux bootloader (e.g OpenSBI, BBL, etc)
@@ -78,6 +80,8 @@ Options:
 `dtb` and `kernel` will be used to boot Linux
 
 `memory` determines the amount of RAM the emulator should allocate. If the dtb argument is used, an additional 2MiB will be allocated, and the dtb will be stored in the top 2MiB.
+
+`virtual-drive` path to a file that will be loaded to a virtio_blk device.
 
 When a dtb is specified, the memory size register is expected to have the magic value `0x0badc0de`. For instance, the anticipated memory definitions in the DTS should appear as follows:
 
@@ -177,15 +181,13 @@ Please note that this will be built using the Native CLI configuration.
 
 ## Supported platforms
 
-| Platform        | Supported | Comments                           |
-|-----------------|-----------|------------------------------------|
-| MacOS aarch64   | ✅        |                                    |
-| MacOS x86       | ✅        | Currenly untested                  |
-| Ubuntu x86      | ✅        | Currenly untested                  |
-| Ubuntu aarch64  | ✅        |                                    |
-| Windows x86     | ✅        | Native CLI only, currenly untested |
-| Windows aarch64 | ✅        | Native CLI only, currenly untested |
-| Emscripten      | ✅        | Native CLI only                    |
+| Platform        | Compatible | Comments                           |
+|-----------------|------------|------------------------------------|
+| MacOS aarch64   | ✅         |                                    |
+| MacOS x86       | ✅         | Currenly untested                  |
+| Ubuntu x86      | ✅         | Currenly untested                  |
+| Ubuntu aarch64  | ✅         |                                    |
+| Emscripten      | ✅         | Native CLI only                    |
 
 ## Dependencies/credits
 

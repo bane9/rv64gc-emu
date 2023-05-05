@@ -6,7 +6,7 @@
 #include "helper.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
-#include "virtio_blk.hpp"
+#include "virtio.hpp"
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -156,12 +156,23 @@ int main(int argc, char* argv[])
         ram_size_total += SIZE_MIB(2);
     }
 
-    auto bios = helper::load_file(bios_path);
-    RamDevice dram = RamDevice(DRAM_BASE, ram_size_total, std::move(bios));
+    virtio::VirtioBlkDevice* virtio_device = nullptr;
 
-    Cpu cpu;
+    if (virt_drive_path)
+    {
+        if (!file_exists(virt_drive_path))
+        {
+            error_exit(argv, "virt_drive path invalid");
+        }
 
-    virtio::VirtioBlkDevice* virtio_blk_device = nullptr;
+        std::vector<uint8_t> virt_drive = helper::load_file(virt_drive_path);
+        virtio_device = new virtio::VirtioBlkDevice(std::move(virt_drive));
+    }
+
+    RamDevice dram = RamDevice(DRAM_BASE, ram_size_total, helper::load_file(bios_path));
+    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
+
+    Cpu cpu = Cpu(&dram, &gpu, virtio_device);
 
     if (dtb_path)
     {
@@ -194,44 +205,6 @@ int main(int argc, char* argv[])
         std::vector<uint8_t> kernel = helper::load_file(kernel_path);
         memcpy(dram.data.data() + KERNEL_OFFSET, kernel.data(), kernel.size());
     }
-
-    if (virt_drive_path)
-    {
-        if (!file_exists(virt_drive_path))
-        {
-            error_exit(argv, "virt_drive path invalid");
-        }
-
-        std::vector<uint8_t> virt_drive = helper::load_file(virt_drive_path);
-        virtio_blk_device = new virtio::VirtioBlkDevice(std::move(virt_drive));
-    }
-
-    cpu.pc = dram.get_base_address();
-    cpu.regs[Cpu::reg_abi_name::sp] = dram.get_base_address() + ram_size;
-
-    gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
-
-    ClintDevice clint;
-    PlicDevice plic;
-
-    // Devices manually sorted by frequency of use
-    cpu.bus.add_device(&dram);
-
-#if !NATIVE_CLI
-    cpu.bus.add_device(&gpu);
-#endif
-
-    cpu.bus.add_device(&clint);
-    cpu.bus.add_device(&plic);
-
-    if (virtio_blk_device != nullptr)
-    {
-        cpu.bus.add_device(virtio_blk_device);
-    }
-
-#if NATIVE_CLI
-    cpu.bus.add_device(&gpu);
-#endif
 
     cpu.run();
 }

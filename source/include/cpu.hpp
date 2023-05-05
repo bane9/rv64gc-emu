@@ -1,11 +1,16 @@
 #pragma once
 
 #include "bus.hpp"
+#include "clint.hpp"
 #include "common_def.hpp"
 #include "csr.hpp"
+#include "gpu.hpp"
 #include "interupt.hpp"
 #include "misc.hpp"
 #include "mmu.hpp"
+#include "plic.hpp"
+#include "ram.hpp"
+#include "virtio.hpp"
 #include <array>
 #include <iostream>
 #include <ostream>
@@ -16,7 +21,8 @@ class Decoder;
 class Cpu
 {
   public:
-    Cpu();
+    Cpu(RamDevice* dram_device, gpu::GpuDevice* gpu_device = nullptr,
+        virtio::VirtioBlkDevice* virtio_blk_device = nullptr);
 
     void dump_registers(std::ostream& stream);
 
@@ -158,6 +164,13 @@ class Cpu
     uint64_t pc = 0;
     // For debugging purposes
     uint64_t previous_pc = 0;
+
+  public:
+    PlicDevice plic_device;
+    ClintDevice clint_device;
+    RamDevice* dram_device;
+    gpu::GpuDevice* gpu_device;
+    virtio::VirtioBlkDevice* virtio_blk_device;
 
   public:
     cpu::Mode mode;

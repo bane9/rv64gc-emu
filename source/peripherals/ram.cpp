@@ -7,12 +7,16 @@ RamDevice::RamDevice(uint64_t rom_start_address, uint64_t rom_end_offset)
 {
     base_addr = rom_start_address;
     end_addr = rom_start_address + rom_end_offset;
+
+    data.resize(end_addr - base_addr);
 }
 
 RamDevice::RamDevice(uint64_t rom_start_address, uint64_t rom_end_offset, std::vector<uint8_t> data)
 {
     base_addr = rom_start_address;
     end_addr = rom_start_address + rom_end_offset;
+
+    this->data.resize(end_addr - base_addr);
     set_data(std::move(data));
 }
 
@@ -39,9 +43,7 @@ uint64_t RamDevice::load(Bus& bus, uint64_t address, uint64_t length)
 
 void RamDevice::set_data(std::vector<uint8_t> data)
 {
-    this->data = std::move(data);
-
-    this->data.resize(end_addr - base_addr);
+    memcpy(this->data.data(), data.data(), data.size());
 }
 
 void RamDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t length)

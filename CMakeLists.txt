@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.22.1)
-
+cmake_minimum_required(VERSION 3.18.4)
 project(rv64gc_emu)
 
 if (USE_EMSCRIPTEN)
@@ -33,7 +32,7 @@ set(SRC_FILES_COMMON
   source/peripherals/clint.cpp
   source/peripherals/plic.cpp
   source/peripherals/ram.cpp
-  source/peripherals/virtio_blk.cpp
+  source/peripherals/virtio.cpp
   
   source/instructions/loadinsn.cpp
   source/instructions/otherinsn.cpp
@@ -98,6 +97,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 if (${NATIVE_CLI})
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  target_link_libraries(rv64gc_emu PRIVATE Threads::Threads)
+
   target_include_directories(rv64gc_emu PRIVATE ${INCLUDE_DIRS})
 
   target_link_libraries(rv64gc_emu PRIVATE fmt::fmt)

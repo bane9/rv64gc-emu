@@ -1,4 +1,4 @@
-#include "virtio_blk.hpp"
+#include "virtio.hpp"
 #include "cpu.hpp"
 #include "cpu_config.hpp"
 #include "helper.hpp"
@@ -33,8 +33,8 @@ void VirtioBlkDevice::update()
 {
     vq.desc = queue_pfn * guest_page_size;
     vq.avail = vq.desc + vq.num * sizeof(VirtqDesc);
-    vq.used = helper::align_up(vq.avail + offsetof(VRingAvail, ring) + vq.num * sizeof(uint16_t),
-                               vq.align);
+    vq.used = helper::align_up(
+        vq.avail + offsetof(VRingAvail, ring) + vq.num * sizeof(VRingAvail::ring[0]), vq.align);
 }
 
 VirtqDesc VirtioBlkDevice::load_desc(Cpu& cpu, uint64_t address)
