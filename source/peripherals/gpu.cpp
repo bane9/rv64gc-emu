@@ -38,7 +38,6 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
     terminal = std::make_unique<Terminal>(term_rows, term_cols, font);
 
     lsr = cfg::lsr_temt | cfg::lsr_thre;
-    isr = 0xc0 | cfg::isr_no_int;
 }
 
 GpuDevice::~GpuDevice()
@@ -285,7 +284,7 @@ void GpuDevice::tick(Cpu& cpu)
         }
     }
 
-    if (text_last_bufferred != ~0ULL && helper::get_milliseconds() - text_last_bufferred > 60)
+    if (text_last_bufferred != ~0ULL && helper::get_milliseconds() - text_last_bufferred > 10)
         [[unlikely]]
     {
         render_textbuffer();
