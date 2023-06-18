@@ -4,6 +4,7 @@
 #include "helper.hpp"
 #include <iostream>
 #include <optional>
+#include <termios.h>
 
 namespace gpu
 {
@@ -25,7 +26,12 @@ GpuDevice::GpuDevice(const char* screen_title, const char* font_path, uint32_t w
     thread_done = false;
 
     lsr = cfg::lsr_temt | cfg::lsr_thre;
-    isr = 0xc0 | cfg::isr_no_int;
+
+    struct termios term;
+    tcgetattr(0, &term);
+    term.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
+    term.c_iflag &= ~(IXON | ICRNL);
+    tcsetattr(0, TCSAFLUSH, &term);
 
 #if !CPU_TEST && !__EMSCRIPTEN__
     stdin_reader_thread = std::thread(&GpuDevice::stdin_reader, this);
@@ -85,7 +91,7 @@ void GpuDevice::store(Bus& bus, uint64_t address, uint64_t value, uint64_t lengt
     {
     case cfg::thr: {
         char c = static_cast<char>(value);
-        std::cout << c;
+        std::cout << c << std::flush;
         break;
     }
     case cfg::ier:
