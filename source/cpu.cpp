@@ -138,15 +138,7 @@ void Cpu::loop(std::ostream& debug_stream)
                 "Exception: {} with data 0x{:0>8x}, happened at pc=0x{:0>8x}\n",
                 exception::Exception::get_exception_str(exc_val), exc_data, pc);
         }
-#if !CPU_TEST
-        if (cregs.load(csr::Address::MTVEC) == 0 && cregs.load(csr::Address::STVEC) == 0)
-            [[unlikely]]
-        {
-            debug_stream << fmt::format(
-                "Error: exception occured without a registered handler, exiting.\n");
-            exit(1);
-        }
-#endif
+
         exception::process(*this);
 
 #if !CPU_TEST

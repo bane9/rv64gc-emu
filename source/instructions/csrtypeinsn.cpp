@@ -97,13 +97,13 @@ void csr::ecall(Cpu& cpu, Decoder decoder)
     switch (cpu.mode)
     {
     case cpu::Mode::Machine:
-        cpu.set_exception(exception::Exception::ECallMMode);
+        cpu.set_exception(exception::Exception::ECallMMode, cpu.pc);
         break;
     case cpu::Mode::Supervisor:
-        cpu.set_exception(exception::Exception::ECallSMode);
+        cpu.set_exception(exception::Exception::ECallSMode, cpu.pc);
         break;
     case cpu::Mode::User:
-        cpu.set_exception(exception::Exception::ECallUMode);
+        cpu.set_exception(exception::Exception::ECallUMode, cpu.pc);
         break;
     default:
         cpu.set_exception(exception::Exception::IllegalInstruction, decoder.insn);

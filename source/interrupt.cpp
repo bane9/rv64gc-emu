@@ -185,7 +185,7 @@ void exception::process(Cpu& cpu)
 
         cpu.cregs.store(csr::Address::SCAUSE, cpu.exc_val);
 
-        cpu.cregs.store(csr::Address::STVAL, get_value(cpu));
+        cpu.cregs.store(csr::Address::STVAL, cpu.exc_data);
 
         cpu.cregs.write_bit_sstatus(csr::Mask::SSTATUSBit::SPIE,
                                     cpu.cregs.read_bit_sstatus(csr::Mask::SSTATUSBit::SIE));
@@ -206,7 +206,7 @@ void exception::process(Cpu& cpu)
 
         cpu.cregs.store(csr::Address::MCAUSE, cpu.exc_val);
 
-        cpu.cregs.store(csr::Address::MTVAL, get_value(cpu));
+        cpu.cregs.store(csr::Address::MTVAL, cpu.exc_data);
 
         cpu.cregs.write_bit_mstatus(csr::Mask::MSTATUSBit::MPIE,
                                     cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MIE));
@@ -214,28 +214,6 @@ void exception::process(Cpu& cpu)
         cpu.cregs.write_bit_mstatus(csr::Mask::MSTATUSBit::MIE, 0);
 
         cpu.cregs.write_mpp_mode(mode);
-    }
-}
-
-uint64_t exception::get_value(Cpu& cpu)
-{
-    switch (cpu.exc_val)
-    {
-    case Exception::InstructionAddressMisaligned:
-    case Exception::InstructionAccessFault:
-    case Exception::Breakpoint:
-    case Exception::LoadAddressMisaligned:
-    case Exception::LoadAccessFault:
-    case Exception::StoreAddressMisaligned:
-    case Exception::StoreAccessFault:
-    case Exception::InstructionPageFault:
-    case Exception::LoadPageFault:
-    case Exception::StorePageFault:
-        return cpu.pc;
-    case Exception::IllegalInstruction:
-        return cpu.exc_data;
-    default:
-        return 0;
     }
 }
 

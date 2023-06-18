@@ -61,7 +61,5 @@ struct Exception
 };
 
 void process(Cpu& cpu);
-uint64_t get_pc(Cpu& cpu);
-uint64_t get_value(Cpu& cpu);
 
 } // namespace exception
