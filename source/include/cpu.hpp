@@ -10,6 +10,7 @@
 #include "mmu.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
+#include "syscon.hpp"
 #include "virtio.hpp"
 #include <array>
 #include <iostream>
@@ -22,7 +23,8 @@ class Cpu
 {
   public:
     Cpu(RamDevice* dram_device, gpu::GpuDevice* gpu_device = nullptr,
-        virtio::VirtioBlkDevice* virtio_blk_device = nullptr);
+        virtio::VirtioBlkDevice* virtio_blk_device = nullptr,
+        SysconDevice* syscon_device = nullptr);
 
     void dump_registers(std::ostream& stream);
 
@@ -171,6 +173,7 @@ class Cpu
     RamDevice* dram_device;
     gpu::GpuDevice* gpu_device;
     virtio::VirtioBlkDevice* virtio_blk_device;
+    SysconDevice* syscon_device;
 
   public:
     cpu::Mode mode;

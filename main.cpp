@@ -6,6 +6,7 @@
 #include "helper.hpp"
 #include "plic.hpp"
 #include "ram.hpp"
+#include "syscon.hpp"
 #include "virtio.hpp"
 #include <algorithm>
 #include <array>
@@ -171,8 +172,9 @@ int main(int argc, char* argv[])
 
     RamDevice dram = RamDevice(DRAM_BASE, ram_size_total, helper::load_file(bios_path));
     gpu::GpuDevice gpu = gpu::GpuDevice("RISC V emulator", font_path, 960, 540);
+    SysconDevice syscon = SysconDevice();
 
-    Cpu cpu = Cpu(&dram, &gpu, virtio_device);
+    Cpu cpu = Cpu(&dram, &gpu, virtio_device, &syscon);
 
     if (dtb_path)
     {

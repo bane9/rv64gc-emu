@@ -24,7 +24,8 @@ Welcome to the RV64GC Emulator repository, a RISC-V emulator project developed u
     - Raw framebuffer mode support: The firmware can write to memory-mapped locations to populate a framebuffer and display the contents on the screen.
 - PLIC
 - CLINT
-- VIRTIO
+- VIRTIO MMIO
+- SYSCON
 - bios (firmware), kernel and dtb loading
 - Successfully completes all [RISCV imafdcsu ISA tests](https://github.com/riscv-software-src/riscv-tests), with some caveats (see [Testing](#testing))
 

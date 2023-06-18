@@ -25,7 +25,7 @@
 #include <utility>
 
 Cpu::Cpu(RamDevice* dram_device, gpu::GpuDevice* gpu_device,
-         virtio::VirtioBlkDevice* virtio_blk_device)
+         virtio::VirtioBlkDevice* virtio_blk_device, SysconDevice* syscon_device)
     : mmu(*this)
 {
     mode = cpu::Mode::Machine;
@@ -57,9 +57,15 @@ Cpu::Cpu(RamDevice* dram_device, gpu::GpuDevice* gpu_device,
         bus.add_device(virtio_blk_device);
     }
 
+    if (syscon_device != nullptr)
+    {
+        bus.add_device(syscon_device);
+    }
+
     this->dram_device = dram_device;
     this->gpu_device = gpu_device;
     this->virtio_blk_device = virtio_blk_device;
+    this->syscon_device = syscon_device;
 
     csr::init_handler_array();
 }

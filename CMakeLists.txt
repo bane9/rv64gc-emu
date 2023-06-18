@@ -33,6 +33,7 @@ set(SRC_FILES_COMMON
   source/peripherals/plic.cpp
   source/peripherals/ram.cpp
   source/peripherals/virtio.cpp
+  source/peripherals/syscon.cpp
   
   source/instructions/loadinsn.cpp
   source/instructions/otherinsn.cpp
