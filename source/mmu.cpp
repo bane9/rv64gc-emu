@@ -220,68 +220,6 @@ bool Mmu::fetch_pte(uint64_t address, AccessType acces_type, cpu::Mode cpu_mode,
             entry.phys_base |= ppn[j] << (12ULL + (j * 9ULL));
         }
     }
-#if !TLB_COMPLIANT
-    bool mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
-    bool sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
-
-    if ((!entry.read && entry.write && !entry.execute) ||
-        (!entry.read && entry.write && entry.execute))
-    {
-        set_cpu_error(address, acces_type);
-        return false;
-    }
-
-    if (entry.user &&
-        ((cpu_mode != cpu::Mode::User) && (!sum || acces_type == AccessType::Instruction)))
-    {
-        set_cpu_error(address, acces_type);
-        return false;
-    }
-
-    if (!entry.user && (cpu_mode != cpu::Mode::Supervisor))
-    {
-        set_cpu_error(address, acces_type);
-        return false;
-    }
-
-    switch (acces_type)
-    {
-    case Mmu::AccessType::Load:
-        if (!(entry.read || (entry.execute && mxr)))
-        {
-            set_cpu_error(address, acces_type);
-            return false;
-        }
-        break;
-    case Mmu::AccessType::Store:
-        if (!entry.write)
-        {
-            set_cpu_error(address, acces_type);
-            return false;
-        }
-        break;
-    case Mmu::AccessType::Instruction:
-        if (!entry.execute)
-        {
-            set_cpu_error(address, acces_type);
-            return false;
-        }
-    }
-
-    if (!entry.accessed || (acces_type == AccessType::Store && !entry.dirty))
-    {
-        entry.pte |= 1ULL << Pte::Accessed;
-        entry.accessed = true;
-
-        if (acces_type == AccessType::Store)
-        {
-            entry.pte |= 1ULL << Pte::Dirty;
-            entry.dirty = true;
-        }
-
-        cpu.bus.store(cpu, entry.pte_addr, entry.pte, 64);
-    }
-#endif
 
     return true;
 }
@@ -377,7 +315,6 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
         return 0;
     }
 
-#if TLB_COMPLIANT
     bool mxr = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::MXR);
     bool sum = cpu.cregs.read_bit_mstatus(csr::Mask::MSTATUSBit::SUM);
 
@@ -438,7 +375,7 @@ uint64_t Mmu::translate(uint64_t address, AccessType acces_type)
 
         cpu.bus.store(cpu, entry->pte_addr, entry->pte, 64);
     }
-#endif
+
     return entry->phys_base | (address & 0xfffULL);
 }
 

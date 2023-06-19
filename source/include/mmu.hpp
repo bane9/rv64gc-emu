@@ -29,7 +29,7 @@ struct TLBEntry
     bool user;
 };
 
-constexpr uint64_t tlb_entries = 2;
+constexpr uint64_t tlb_entries = 4;
 
 struct Mode
 {

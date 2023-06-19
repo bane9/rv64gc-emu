@@ -259,22 +259,60 @@ void GpuDevice::tick(Cpu& cpu)
         last_tick = current_tick;
         SDL_Event e;
 
-        while (SDL_PollEvent(&e))
+        if (SDL_PollEvent(&e))
         {
             switch (e.type)
             {
             case SDL_QUIT:
                 exit(0);
                 break;
-            case SDL_TEXTINPUT:
-                uart_putchar(e.text.text[0]);
-                break;
-            case SDL_KEYDOWN:
-                if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER)
+            case SDL_KEYDOWN: {
+                if (SDL_GetModState() & KMOD_CTRL)
                 {
-                    uart_putchar('\n');
+                    switch (e.key.keysym.sym)
+                    {
+                    case SDLK_c:
+                        uart_putchar(0x3);
+                        break;
+                    case SDLK_d:
+                        uart_putchar(0x4);
+                        break;
+                    }
                 }
-                break;
+                else
+                {
+                    const Uint8* keystates = SDL_GetKeyboardState(NULL);
+                    SDL_Keycode keycode = e.key.keysym.sym;
+                    bool shiftPressed =
+                        keystates[SDL_SCANCODE_LSHIFT] || keystates[SDL_SCANCODE_RSHIFT];
+                    bool capsLockOn = SDL_GetModState() & KMOD_CAPS;
+                    bool isLetter = (keycode >= SDLK_a && keycode <= SDLK_z);
+
+                    if (shiftPressed || capsLockOn)
+                    {
+                        if (isLetter)
+                        {
+                            uart_putchar(SDL_toupper((char)keycode));
+                        }
+                        else
+                        {
+                            uart_putchar((char)keycode);
+                        }
+                    }
+                    else
+                    {
+                        if (isLetter)
+                        {
+                            uart_putchar(SDL_tolower((char)keycode));
+                        }
+                        else
+                        {
+                            uart_putchar((char)keycode);
+                        }
+                    }
+                }
+            }
+            break;
             case SDL_KEYUP:
                 val = 0;
                 break;
