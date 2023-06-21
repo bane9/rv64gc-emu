@@ -4,6 +4,10 @@
 
 Welcome to the RV64GC Emulator repository, a RISC-V emulator project developed using C++20, striving for high performance and comprehensive feature support. This emulator not only delivers a robust set of features but also provides Linux buildroot configuration and a port of DOOM, which can be found in the [rv64gc-emu-software](https://github.com/bane9/rv64gc-emu-software) repository.
 
+
+https://github.com/bane9/rv64gc-emu/assets/29211832/0b25afea-3062-4471-b5e4-7e286e6425f1
+
+
 ## Table of Contents
 - [Features](#features)
 - [Building](#building)
