@@ -1,4 +1,4 @@
-# RV64GC Emulator: A RISC-V Emulator developed in C++20
+# RV64GC Emulator: A RISC-V Emulator that can boot Linux
 
 [![Build Status](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml/badge.svg)](https://github.com/bane9/rv64gc-emu/actions/workflows/build.yml)
 
