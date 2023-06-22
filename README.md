@@ -190,7 +190,7 @@ Please note that this will be built using the Native CLI configuration.
 |-----------------|------------|------------------------------------|
 | MacOS aarch64   | ✅         |                                    |
 | MacOS x86       | ✅         | Currenly untested                  |
-| Ubuntu x86      | ✅         | Currenly untested                  |
+| Ubuntu x86      | ✅         |                                    |
 | Ubuntu aarch64  | ✅         |                                    |
 | Emscripten      | ✅         | Native CLI only                    |
 
