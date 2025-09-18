@@ -318,7 +318,7 @@ static void csr_satp_handler(Cpu& cpu, Decoder decoder, uint64_t csr, uint64_t r
 
 void csr::init_handler_array()
 {
-    std::fill(csr_handlers.begin(), csr_handlers.end(), csr_default_handler);
+    std::fill(csr_handlers.begin(), csr_handlers.end(), static_cast<csr_handler_t>(csr_default_handler));
     csr_handlers[Address::FCSR] = csr_fcsr_handler;
     csr_handlers[Address::FFLAGS] = csr_fflags_handler;
     csr_handlers[Address::FRM] = csr_frm_handler;
